@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>التقارير — Flowdesk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div class="app">
+
+  <div id="sidebarSlot"></div>
+
+  <main class="main">
+    <div id="topbarSlot"></div>
+
+    <section class="page-head">
+      <div class="page-head-text">
+        <h1 class="page-title">التقارير</h1>
+        <p class="page-sub">نظرة شاملة على إنتاجية الفريق خلال آخر أسبوعين.</p>
+      </div>
+      <div class="head-right">
+        <div class="seg" id="rangeSeg">
+          <button class="seg-btn active" data-range="7">آخر 7 أيام</button>
+          <button class="seg-btn" data-range="14">آخر 14 يوم</button>
+          <button class="seg-btn" data-range="30">آخر 30 يوم</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="kpi-row">
+      <div class="kpi-chip"><span class="kpi-num" id="rTotal">0</span><span class="kpi-label">إجمالي المهام</span></div>
+      <div class="kpi-chip ok"><span class="kpi-num" id="rDone">0</span><span class="kpi-label">منجزة</span></div>
+      <div class="kpi-chip warn"><span class="kpi-num" id="rOverdue">0</span><span class="kpi-label">متأخرة</span></div>
+      <div class="kpi-chip alt"><span class="kpi-num" id="rAvg">0</span><span class="kpi-label">متوسط/موظف</span></div>
+    </section>
+
+    <section class="reports-grid">
+
+      <div class="card-block big-chart">
+        <header class="panel-head">
+          <h3>نشاط الفريق</h3>
+          <span class="muted">المهام المنجزة يومياً</span>
+        </header>
+        <div class="bar-chart" id="barChart"></div>
+      </div>
+
+      <div class="card-block">
+        <header class="panel-head">
+          <h3>المهام حسب الفئة</h3>
+        </header>
+        <div class="legend-list" id="categoryLegend"></div>
+      </div>
+
+      <div class="card-block">
+        <header class="panel-head">
+          <h3>المهام حسب الأولوية</h3>
+        </header>
+        <div class="prio-bars" id="priorityBars"></div>
+      </div>
+
+      <div class="card-block leaderboard-block">
+        <header class="panel-head">
+          <h3>قائمة الأبطال</h3>
+          <span class="muted">المهام المنجزة</span>
+        </header>
+        <div id="leaderboardR" class="leaderboard"></div>
+      </div>
+
+      <div class="card-block activity-block">
+        <header class="panel-head">
+          <h3>سجل النشاط</h3>
+          <span class="muted">آخر التحركات</span>
+        </header>
+        <div id="activityFeed" class="activity-feed"></div>
+      </div>
+
+    </section>
+
+  </main>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script src="data.js"></script>
+<script src="layout.js"></script>
+<script src="task-modal.js"></script>
+<script src="reports.js"></script>
+</body>
+</html>

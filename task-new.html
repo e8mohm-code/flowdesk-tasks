@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>مهمة جديدة — Flowdesk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div class="app">
+
+  <div id="sidebarSlot"></div>
+
+  <main class="main">
+    <div id="topbarSlot"></div>
+
+    <section class="page-head">
+      <div class="page-head-text">
+        <a href="index.html" class="back-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+          العودة للمهام
+        </a>
+        <h1 class="page-title">مهمة جديدة</h1>
+        <p class="page-sub">املأ التفاصيل أدناه. الحقول التي عليها <span class="req">*</span> مطلوبة.</p>
+      </div>
+    </section>
+
+    <form class="task-form" id="taskForm" autocomplete="off">
+
+      <!-- Main column -->
+      <div class="form-main">
+
+        <section class="field-card">
+          <label class="field-label" for="taskTitle">عنوان المهمة <span class="req">*</span></label>
+          <input class="field-input lg" id="taskTitle" name="title" placeholder="مثال: تطوير صفحة لوحة التحكم..." required />
+          <span class="field-hint">عنوان واضح يصف الهدف بإيجاز</span>
+        </section>
+
+        <section class="field-card">
+          <label class="field-label" for="taskDesc">الوصف</label>
+          <textarea class="field-textarea" id="taskDesc" name="desc" rows="5" placeholder="تفاصيل إضافية، روابط، متطلبات..."></textarea>
+          <div class="rich-toolbar">
+            <button type="button" class="rich-btn" data-fmt="bold" title="عريض"><b>B</b></button>
+            <button type="button" class="rich-btn" data-fmt="italic" title="مائل"><i>I</i></button>
+            <button type="button" class="rich-btn" data-fmt="ul" title="قائمة">•≡</button>
+            <button type="button" class="rich-btn" data-fmt="link" title="رابط">🔗</button>
+            <span class="muted" style="margin-inline-start:auto;font-size:11px" id="charCount">0 حرف</span>
+          </div>
+        </section>
+
+        <section class="field-card">
+          <div class="block-head">
+            <label class="field-label">المهام الفرعية</label>
+            <span class="muted" id="subtaskCount">0 / 0</span>
+          </div>
+          <ul class="subtask-list" id="subtaskList"></ul>
+          <div class="subtask-add">
+            <input class="field-input" id="subtaskInput" placeholder="أضف خطوة فرعية..." />
+            <button type="button" class="ghost-btn" id="addSubtask">إضافة</button>
+          </div>
+        </section>
+
+        <section class="field-card">
+          <div class="block-head">
+            <label class="field-label">المرفقات</label>
+            <span class="muted" id="attCount">لا ملفات</span>
+          </div>
+
+          <label class="upload-zone" id="uploadZone" tabindex="0">
+            <input type="file" multiple id="fileInput" hidden />
+            <span class="up-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            </span>
+            <h4>اسحب الملفات هنا أو اضغط للاختيار</h4>
+            <p class="muted">PDF، صور، Word، Excel، فيديو... حتى 50MB لكل ملف</p>
+          </label>
+
+          <div id="attachList" class="attach-list"></div>
+        </section>
+
+        <section class="field-card">
+          <label class="field-label">إعدادات إضافية</label>
+
+          <!-- Recurring (with expandable settings) -->
+          <div class="setting-block" id="settingRecurring">
+            <label class="setting-toggle">
+              <input type="checkbox" id="optRecurring" />
+              <span class="setting-label">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+                تتكرر تلقائياً
+              </span>
+              <span class="setting-summary" id="recurringSummary"></span>
+            </label>
+            <div class="setting-content" id="recurringContent" hidden>
+              <div class="field-block">
+                <span class="mini-label">التكرار</span>
+                <div class="seg-mini" id="recurFreq">
+                  <button type="button" data-freq="daily">يومياً</button>
+                  <button type="button" data-freq="weekly" class="active">أسبوعياً</button>
+                  <button type="button" data-freq="monthly">شهرياً</button>
+                </div>
+              </div>
+
+              <div class="field-block" id="recurWeeklyDays">
+                <span class="mini-label">أيام التكرار</span>
+                <div class="weekday-picker" id="recurDays">
+                  <button type="button" data-day="0">أحد</button>
+                  <button type="button" data-day="1">إث</button>
+                  <button type="button" data-day="2" class="active">ثل</button>
+                  <button type="button" data-day="3">أر</button>
+                  <button type="button" data-day="4">خم</button>
+                  <button type="button" data-day="5">جم</button>
+                  <button type="button" data-day="6">سب</button>
+                </div>
+              </div>
+
+              <div class="field-block" id="recurMonthlyDay" hidden>
+                <span class="mini-label">يوم الشهر</span>
+                <input type="number" id="recurDayOfMonth" class="field-input" min="1" max="31" value="1" />
+              </div>
+
+              <div class="field-block">
+                <span class="mini-label">ينتهي</span>
+                <div class="seg-mini" id="recurEnd">
+                  <button type="button" data-end="never" class="active">لا ينتهي</button>
+                  <button type="button" data-end="count">بعد عدد</button>
+                  <button type="button" data-end="date">في تاريخ</button>
+                </div>
+              </div>
+
+              <div class="field-block" id="recurEndCountWrap" hidden>
+                <span class="mini-label">عدد التكرارات</span>
+                <input type="number" id="recurEndCount" class="field-input" min="1" value="10" />
+              </div>
+              <div class="field-block" id="recurEndDateWrap" hidden>
+                <span class="mini-label">تاريخ الانتهاء</span>
+                <input type="date" id="recurEndDate" class="field-input" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Depends on another task -->
+          <div class="setting-block" id="settingDepends">
+            <label class="setting-toggle">
+              <input type="checkbox" id="optDepends" />
+              <span class="setting-label">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+                تعتمد على مهمة أخرى
+              </span>
+              <span class="setting-summary" id="dependsSummary"></span>
+            </label>
+            <div class="setting-content" id="dependsContent" hidden>
+              <div class="field-block">
+                <span class="mini-label">المهمة السابقة</span>
+                <select id="dependsSelect" class="field-input">
+                  <option value="">اختر مهمة...</option>
+                </select>
+              </div>
+              <div class="field-block">
+                <span class="mini-label">شرط الاعتماد</span>
+                <div class="seg-mini" id="dependsType">
+                  <button type="button" data-type="finish" class="active">تنتهي السابقة أولاً</button>
+                  <button type="button" data-type="start">تبدأ السابقة أولاً</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- Right column -->
+      <aside class="form-side">
+
+        <section class="field-card sticky-side">
+
+          <div class="field-block">
+            <label class="field-label">المسند إليه</label>
+            <div class="assignee-picker" id="assigneePicker"></div>
+          </div>
+
+          <div class="field-block">
+            <label class="field-label">
+              المتابعون <small class="muted">(CC)</small>
+            </label>
+            <div class="watchers-row" id="watchersRow"></div>
+            <span class="field-hint">يستلمون نسخة من تحديثات المهمة بدون أن يكونوا مسؤولين عنها</span>
+          </div>
+
+          <div class="field-block">
+            <label class="field-label" for="taskDue">تاريخ الانتهاء</label>
+            <input type="date" id="taskDue" name="due" class="field-input" />
+            <div class="quick-dates">
+              <button type="button" class="ghost-btn sm" data-quick="0">اليوم</button>
+              <button type="button" class="ghost-btn sm" data-quick="1">غداً</button>
+              <button type="button" class="ghost-btn sm" data-quick="7">بعد أسبوع</button>
+            </div>
+          </div>
+
+          <div class="field-block">
+            <label class="field-label">الأولوية</label>
+            <div class="prio-seg" id="prioSeg">
+              <button type="button" data-prio="low" class="active">
+                <i class="dot prio-low"></i>
+                <span>منخفضة</span>
+              </button>
+              <button type="button" data-prio="medium">
+                <i class="dot prio-mid"></i>
+                <span>متوسطة</span>
+              </button>
+              <button type="button" data-prio="high">
+                <i class="dot prio-high"></i>
+                <span>عالية</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="field-block">
+            <label class="field-label">الفئة</label>
+            <div class="tag-picker" id="tagPicker"></div>
+          </div>
+
+          <div class="field-block">
+            <label class="field-label" for="taskProgress">التقدّم</label>
+            <div class="input-with-suffix">
+              <input type="number" id="taskProgress" min="0" max="100" step="5" value="0" class="field-input" />
+              <span class="suffix">%</span>
+            </div>
+          </div>
+
+          <!-- XP Reward -->
+          <div class="field-block">
+            <label class="field-label">مكافأة XP عند الإنجاز</label>
+            <div class="xp-picker" id="xpPicker">
+              <button type="button" class="xp-pill" data-xp="10">+10</button>
+              <button type="button" class="xp-pill active" data-xp="25">+25</button>
+              <button type="button" class="xp-pill" data-xp="50">+50</button>
+              <button type="button" class="xp-pill" data-xp="100">+100</button>
+            </div>
+            <span class="field-hint">تُمنح للمسند إليه عند إغلاق المهمة</span>
+          </div>
+
+          <div class="field-block">
+            <label class="check star-check"><input type="checkbox" id="taskStarred" />
+              <span><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><polygon points="12 2 15 8.5 22 9.3 17 14.1 18.2 21 12 17.8 5.8 21 7 14.1 2 9.3 9 8.5 12 2"/></svg> أضف للمفضلة</span>
+            </label>
+          </div>
+
+        </section>
+
+        <div class="form-actions">
+          <button type="button" class="ghost-btn full" id="cancelBtn">إلغاء</button>
+          <button type="submit" class="cta full" id="saveBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l4 4L13 8"/></svg>
+            حفظ المهمة
+          </button>
+        </div>
+      </aside>
+
+    </form>
+
+  </main>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script src="data.js"></script>
+<script src="layout.js"></script>
+<script src="task-new.js"></script>
+</body>
+</html>

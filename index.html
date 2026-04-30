@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>المهام — Flowdesk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body class="tv-board">
+<div class="app">
+
+  <div id="sidebarSlot"></div>
+
+  <main class="main">
+    <div id="topbarSlot"></div>
+
+    <!-- COMPACT PAGE HEAD with inline KPIs -->
+    <section class="page-head tv-head">
+      <div class="page-head-text">
+        <h1 class="page-title">لوحة مهام الفريق</h1>
+        <p class="page-sub">عرض حيّ لتوزيع المهام على الفريق</p>
+      </div>
+
+      <div class="head-stats">
+        <div class="hs"><b id="totalEmployees">0</b><span>موظفين</span></div>
+        <div class="hs sep"></div>
+        <div class="hs"><b id="totalAssigned">0</b><span>مسندة</span></div>
+        <div class="hs warn"><b id="totalOverdue">0</b><span>متأخرة</span></div>
+        <div class="hs alt"><b id="totalUnassigned">0</b><span>في الانتظار</span></div>
+        <div class="hs sep"></div>
+        <div class="hs clock"><b id="liveClock">--:--</b><span id="liveDate">—</span></div>
+      </div>
+    </section>
+
+    <!-- HUB -->
+    <section class="hub tv-hub">
+      <div class="employees-area">
+        <header class="area-head">
+          <h2 class="area-title">الموظفون</h2>
+          <div class="legend">
+            <span class="lg"><i class="dot prio-low"></i> منخفضة</span>
+            <span class="lg"><i class="dot prio-mid"></i> متوسطة</span>
+            <span class="lg"><i class="dot prio-high"></i> عالية</span>
+            <span class="lg"><i class="dot overdue"></i> متأخرة</span>
+          </div>
+        </header>
+        <div class="employees-grid tv-grid" id="employeesGrid"></div>
+      </div>
+
+      <aside class="unassigned-panel" data-zone="unassigned">
+        <header class="panel-head">
+          <div>
+            <h2 class="area-title">مهام غير مسندة</h2>
+            <p class="area-sub">اسحب البطاقة إلى موظف</p>
+          </div>
+          <span class="count-pill" id="unassignedCount">0</span>
+        </header>
+        <div class="unassigned-list" id="unassignedList"></div>
+        <button class="cta" id="addTaskBtnPanel">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+          مهمة جديدة
+        </button>
+
+        <!-- Mini reports — beautiful stat cards filling the empty space -->
+        <div class="mini-reports">
+          <header class="mini-head">
+            <h3>تقارير سريعة</h3>
+            <a class="mini-link" href="reports.html">المزيد ←</a>
+          </header>
+
+          <!-- Card 1: Team completion rate -->
+          <div class="stat-card sc-violet">
+            <div class="sc-row">
+              <span class="sc-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 010-5H6"/><path d="M18 9h1.5a2.5 2.5 0 000-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20 17 22"/><path d="M18 2H6v7a6 6 0 0012 0V2z"/></svg>
+              </span>
+              <div class="sc-info">
+                <span class="sc-label">نسبة إنجاز الفريق</span>
+                <b class="sc-value" id="scCompletion">0%</b>
+              </div>
+            </div>
+            <div class="sc-progress"><span id="scCompletionBar" style="width:0%"></span></div>
+            <div class="sc-trend"><i id="scCompletionTrend">↑ 12%</i> عن الأسبوع الماضي</div>
+          </div>
+
+          <!-- Card 2: Distribution donut -->
+          <div class="stat-card">
+            <div class="sc-row sc-row-between">
+              <span class="sc-label">توزيع المهام</span>
+              <b class="sc-total" id="scTotal">0</b>
+            </div>
+            <div class="sc-dist">
+              <div class="sc-donut">
+                <svg viewBox="0 0 100 100" class="donut-svg">
+                  <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(15,23,42,0.06)" stroke-width="9"/>
+                  <g transform="rotate(-90 50 50)">
+                    <circle id="scDActive"  cx="50" cy="50" r="40" fill="none" stroke="#4f7af0" stroke-width="9" stroke-linecap="butt" stroke-dasharray="0 251" stroke-dashoffset="0"/>
+                    <circle id="scDOverdue" cx="50" cy="50" r="40" fill="none" stroke="#e25b62" stroke-width="9" stroke-linecap="butt" stroke-dasharray="0 251" stroke-dashoffset="0"/>
+                    <circle id="scDWaiting" cx="50" cy="50" r="40" fill="none" stroke="#f0a042" stroke-width="9" stroke-linecap="butt" stroke-dasharray="0 251" stroke-dashoffset="0"/>
+                    <circle id="scDDone"    cx="50" cy="50" r="40" fill="none" stroke="#2bb673" stroke-width="9" stroke-linecap="butt" stroke-dasharray="0 251" stroke-dashoffset="0"/>
+                  </g>
+                </svg>
+              </div>
+              <ul class="sc-legend">
+                <li><i style="background:#4f7af0"></i> نشطة <b id="scActive">0</b></li>
+                <li><i style="background:#e25b62"></i> متأخرة <b id="scOverdue">0</b></li>
+                <li><i style="background:#f0a042"></i> انتظار <b id="scWaiting">0</b></li>
+                <li><i style="background:#2bb673"></i> مكتملة <b id="scDone">0</b></li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Card 3: Completed this week + sparkline -->
+          <div class="stat-card sc-green">
+            <div class="sc-row">
+              <div class="sc-info">
+                <span class="sc-label">المهام المكتملة</span>
+                <b class="sc-value" id="scWeekDone">0</b>
+                <span class="sc-sub">هذا الأسبوع</span>
+              </div>
+            </div>
+            <svg class="sc-spark" viewBox="0 0 100 28" preserveAspectRatio="none">
+              <path id="scSparkFill" d="" fill="rgba(43,182,115,0.15)"/>
+              <path id="scSparkLine" d="" stroke="#2bb673" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+
+          <!-- Card 4: Upcoming deadlines -->
+          <div class="stat-card sc-amber">
+            <div class="sc-row">
+              <span class="sc-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
+              </span>
+              <div class="sc-info">
+                <span class="sc-label">قريباً</span>
+                <b class="sc-value" id="scUpcoming">0</b>
+                <span class="sc-sub">مواعيد خلال 3 أيام</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card: Team XP -->
+          <div class="stat-card sc-violet">
+            <div class="sc-row">
+              <span class="sc-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              </span>
+              <div class="sc-info">
+                <span class="sc-label">XP الفريق</span>
+                <b class="sc-value" id="scTeamXp">0</b>
+                <span class="sc-sub" id="scTeamXpSub">نقطة هذا الأسبوع</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 5: Mini calendar -->
+          <div class="stat-card mini-cal-card">
+            <div class="mini-cal-head">
+              <button class="mc-nav" id="miniCalPrev" aria-label="السابق">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+              </button>
+              <span class="mini-cal-month" id="miniCalMonth">—</span>
+              <button class="mc-nav" id="miniCalNext" aria-label="التالي">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+              </button>
+            </div>
+            <div class="mini-cal-weekdays">
+              <span>أحد</span><span>ن</span><span>ث</span><span>ر</span><span>خ</span><span>ج</span><span>س</span>
+            </div>
+            <div class="mini-cal-grid" id="miniCalGrid"></div>
+            <div class="mini-cal-legend">
+              <span><i class="lg-dot today"></i> اليوم</span>
+              <span><i class="lg-dot tasks"></i> مهام</span>
+              <span><i class="lg-dot overdue"></i> متأخرة</span>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </section>
+
+  </main>
+</div>
+
+<div id="deleteZone" class="delete-zone" data-zone="delete">
+  <span class="dz-icon">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1.5 14a2 2 0 01-2 2H8.5a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a2 2 0 012-2h2a2 2 0 012 2v2"/></svg>
+  </span>
+  <span class="dz-text">اسحب هنا للحذف</span>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script src="data.js"></script>
+<script src="layout.js"></script>
+<script src="task-modal.js"></script>
+<script src="task-detail-modal.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

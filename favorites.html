@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>المفضلة — Flowdesk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div class="app">
+
+  <div id="sidebarSlot"></div>
+
+  <main class="main">
+    <div id="topbarSlot"></div>
+
+    <section class="page-head">
+      <div class="page-head-text">
+        <h1 class="page-title">المفضلة</h1>
+        <p class="page-sub">المهام التي حدّدتها بنجمة. اضغط على النجمة لإزالة المهمة من المفضلة.</p>
+      </div>
+      <div class="head-right">
+        <div class="seg" id="favSeg">
+          <button class="seg-btn active" data-filter="all">الكل</button>
+          <button class="seg-btn" data-filter="open">مفتوحة</button>
+          <button class="seg-btn" data-filter="done">منجزة</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="kpi-row">
+      <div class="kpi-chip"><span class="kpi-num" id="fTotal">0</span><span class="kpi-label">في المفضلة</span></div>
+      <div class="kpi-chip ok"><span class="kpi-num" id="fOpen">0</span><span class="kpi-label">مفتوحة</span></div>
+      <div class="kpi-chip warn"><span class="kpi-num" id="fOverdue">0</span><span class="kpi-label">متأخرة</span></div>
+      <div class="kpi-chip alt"><span class="kpi-num" id="fDone">0</span><span class="kpi-label">منجزة</span></div>
+    </section>
+
+    <section class="fav-grid" id="favGrid"></section>
+
+  </main>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script src="data.js"></script>
+<script src="layout.js"></script>
+<script src="task-modal.js"></script>
+<script src="task-detail-modal.js"></script>
+<script src="favorites.js"></script>
+</body>
+</html>

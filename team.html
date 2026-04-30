@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>الفريق — Flowdesk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div class="app">
+
+  <div id="sidebarSlot"></div>
+
+  <main class="main">
+    <div id="topbarSlot"></div>
+
+    <section class="page-head">
+      <div class="page-head-text">
+        <h1 class="page-title">الفريق</h1>
+        <p class="page-sub">كل عضو في الفريق وتفاصيل عمله الحالي. اضغط على البطاقة لعرض مهامه.</p>
+      </div>
+      <div class="head-right">
+        <div class="head-actions">
+          <button class="round-btn" aria-label="إضافة عضو"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></button>
+          <button class="round-btn" aria-label="تصدير"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a2 2 0 002 2h12a2 2 0 002-2v-7"/><path d="M16 6l-4-4-4 4"/><path d="M12 2v13"/></svg></button>
+        </div>
+      </div>
+    </section>
+
+    <section class="kpi-row">
+      <div class="kpi-chip"><span class="kpi-num" id="kpiTotalMembers">0</span><span class="kpi-label">إجمالي الأعضاء</span></div>
+      <div class="kpi-chip ok"><span class="kpi-num" id="kpiActiveTasks">0</span><span class="kpi-label">مهام نشطة</span></div>
+      <div class="kpi-chip warn"><span class="kpi-num" id="kpiTeamOverdue">0</span><span class="kpi-label">متأخرة على الفريق</span></div>
+      <div class="kpi-chip alt"><span class="kpi-num" id="kpiCompletedWeek">0</span><span class="kpi-label">مكتملة هذا الأسبوع</span></div>
+    </section>
+
+    <section class="hub">
+      <div class="employees-area">
+        <header class="area-head">
+          <h2 class="area-title">أعضاء الفريق</h2>
+          <div class="filter-chips" id="roleFilters"></div>
+        </header>
+        <div class="team-grid" id="teamGrid"></div>
+      </div>
+
+      <aside class="unassigned-panel">
+        <header class="panel-head">
+          <div>
+            <h2 class="area-title">أبطال الأسبوع</h2>
+            <p class="area-sub">حسب المهام المنجزة آخر 7 أيام</p>
+          </div>
+          <span class="count-pill ok" id="leadersCount">0</span>
+        </header>
+        <div id="leaderboard" class="leaderboard"></div>
+      </aside>
+    </section>
+
+  </main>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script src="data.js"></script>
+<script src="layout.js"></script>
+<script src="task-modal.js"></script>
+<script src="team.js"></script>
+</body>
+</html>

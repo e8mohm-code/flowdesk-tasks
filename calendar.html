@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>التقويم — Flowdesk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div class="app">
+
+  <div id="sidebarSlot"></div>
+
+  <main class="main">
+    <div id="topbarSlot"></div>
+
+    <section class="page-head">
+      <div class="page-head-text">
+        <h1 class="page-title">التقويم</h1>
+        <p class="page-sub">جميع المهام موزّعة على تواريخ الاستحقاق. النقاط الملوّنة تشير لمن أُسندت إليه المهمة.</p>
+      </div>
+      <div class="head-right">
+        <div class="month-nav">
+          <button class="round-btn" id="prevMonth" aria-label="السابق"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+          <span class="month-label" id="monthLabel">—</span>
+          <button class="round-btn" id="nextMonth" aria-label="التالي"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
+          <button class="ghost-btn" id="todayBtn">اليوم</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="hub">
+      <div class="employees-area">
+        <div class="cal-card">
+          <div class="cal-head">
+            <span>الأحد</span><span>الإثنين</span><span>الثلاثاء</span><span>الأربعاء</span><span>الخميس</span><span>الجمعة</span><span>السبت</span>
+          </div>
+          <div class="cal-grid" id="calGrid"></div>
+        </div>
+      </div>
+
+      <aside class="unassigned-panel cal-side">
+        <header class="panel-head">
+          <div>
+            <h2 class="area-title">جدول اليوم</h2>
+            <p class="area-sub" id="todayLabel">—</p>
+          </div>
+          <span class="count-pill" id="todayCount">0</span>
+        </header>
+        <div class="cal-agenda" id="todayList"></div>
+
+        <header class="panel-head" style="margin-top:8px">
+          <h3 class="area-title" style="font-size:14px">الأسبوع القادم</h3>
+        </header>
+        <div class="cal-agenda muted-list" id="upcomingList"></div>
+      </aside>
+    </section>
+
+  </main>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script src="data.js"></script>
+<script src="layout.js"></script>
+<script src="task-modal.js"></script>
+<script src="task-detail-modal.js"></script>
+<script src="calendar.js"></script>
+</body>
+</html>

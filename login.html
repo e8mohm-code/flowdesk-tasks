@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>تسجيل الدخول — Flowdesk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body class="login-body">
+
+<main class="login-page narrow">
+
+  <div class="login-card-shell">
+    <header class="login-head">
+      <div class="brand-mark big">
+        <span class="brand-logo"></span>
+        <span class="brand-name">flowdesk</span>
+      </div>
+      <h1 class="login-title">تسجيل الدخول</h1>
+      <p class="login-sub">ادخل بيانات حسابك للمتابعة</p>
+    </header>
+
+    <form id="loginForm" class="login-form" autocomplete="on">
+      <div class="login-field">
+        <label for="loginIdInput" class="field-label">رقم المستخدم</label>
+        <input
+          id="loginIdInput"
+          name="loginId"
+          type="text"
+          inputmode="numeric"
+          pattern="[0-9]+"
+          class="field-input lg"
+          placeholder="مثلاً 151215"
+          required
+          autocomplete="username"
+        />
+      </div>
+
+      <div class="login-field">
+        <label for="loginPwdInput" class="field-label">كلمة المرور</label>
+        <div class="login-pwd-wrap">
+          <input
+            id="loginPwdInput"
+            name="password"
+            type="password"
+            class="field-input lg"
+            placeholder="••••"
+            required
+            autocomplete="current-password"
+          />
+          <button type="button" class="login-pwd-toggle" id="pwdToggle" aria-label="إظهار/إخفاء كلمة المرور">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="login-error" id="loginError" hidden>
+        رقم المستخدم أو كلمة المرور غير صحيحة
+      </div>
+
+      <button type="submit" class="cta full" id="loginBtn">
+        تسجيل الدخول
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+      </button>
+    </form>
+
+    <details class="login-demo">
+      <summary>👁️ عرض حسابات تجريبية</summary>
+      <div class="login-demo-list">
+        <div class="login-demo-row" data-fill="151215|1111">
+          <b>المدير</b>
+          <code>151215</code> · <code>1111</code>
+        </div>
+        <div class="login-demo-row" data-fill="152525|2525">
+          <b>المشرف</b>
+          <code>152525</code> · <code>2525</code>
+        </div>
+        <div class="login-demo-row" data-fill="153030|3030">
+          <b>الموظف</b>
+          <code>153030</code> · <code>3030</code>
+        </div>
+      </div>
+    </details>
+  </div>
+
+</main>
+
+<script src="data.js"></script>
+<script src="login.js"></script>
+</body>
+</html>
