@@ -455,18 +455,22 @@ h1, h2, h3, h4 { margin: 0; }
   position: relative;
 }
 .emp-avatar {
+  display: inline-block;
   width: 40px; height: 40px;
   border-radius: 50%;
   flex: 0 0 40px;
   padding: 2px;
   background: var(--emp-color, var(--accent));
   position: relative;
+  overflow: visible; /* allow lv-badge to overflow */
+  box-sizing: border-box;
 }
 .emp-avatar img {
   width: 100%; height: 100%;
   border-radius: 50%; object-fit: cover;
   border: 2px solid var(--surface);
   display: block;
+  box-sizing: border-box;
 }
 
 .emp-info { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
@@ -879,19 +883,31 @@ body.dragging .delete-zone {
   transition: background .2s var(--ease), border-color .2s var(--ease);
 }
 .overview-row:hover { background: var(--surface-soft); border-color: var(--line-2); }
-.overview-row .ov-av {
-  width: 30px; height: 30px;
+
+/* Generic avatar pill — every .ov-av is constrained to a circle */
+.ov-av {
+  display: inline-block;
+  width: 32px; height: 32px;
+  flex: 0 0 32px;
   border-radius: 50%;
   padding: 2px;
   background: var(--emp-color, var(--accent));
-  flex: 0 0 30px;
-  display: inline-block;
+  box-sizing: border-box;
+  overflow: hidden;
+  vertical-align: middle;
 }
-.overview-row .ov-av img {
+.ov-av img {
   width: 100%; height: 100%;
-  border-radius: 50%; object-fit: cover;
+  border-radius: 50%;
+  object-fit: cover;
   border: 2px solid var(--surface);
   display: block;
+  box-sizing: border-box;
+}
+
+.overview-row .ov-av {
+  width: 30px; height: 30px;
+  flex: 0 0 30px;
 }
 .overview-row .ov-name { font-weight: 700; color: var(--ink); font-size: 13px; }
 .overview-row .ov-role { color: var(--ink-3); font-size: 11px; display: block; margin-top: 1px; }
@@ -4490,10 +4506,13 @@ body.modal-open { overflow: hidden; }
   margin-bottom: 4px;
 }
 .avatar-dd-img {
+  display: inline-block;
+  flex: 0 0 40px;
   width: 40px; height: 40px;
   border-radius: 50%;
   padding: 2px;
   background: var(--emp-color, var(--accent));
+  box-sizing: border-box;
 }
 .avatar-dd-img img {
   width: 100%; height: 100%;
@@ -4566,12 +4585,14 @@ body.modal-open { overflow: hidden; }
 .ph-greeting h1 { font-size: 22px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.2; }
 
 .ph-avatar {
+  display: inline-block;
   position: relative;
   width: 52px; height: 52px;
   border-radius: 50%;
   padding: 2.5px;
   background: var(--emp-color, var(--accent));
   flex: 0 0 52px;
+  box-sizing: border-box;
 }
 .ph-avatar img {
   width: 100%; height: 100%;
