@@ -467,7 +467,7 @@ window.TaskModal = (function () {
         ${all.map(b => `
           <span class="brand-wrap">
             <button type="button" class="brand-pick ${state.brandKeys.includes(b.key) ? 'selected' : ''}" data-key="${b.key}" style="--brand-color:${b.color}">
-              <i class="bdot"></i>${esc(b.label)}
+              ${b.logoFile ? `<span class="brand-logo"><img src="${b.logoFile}" alt=""/></span>` : '<i class="bdot"></i>'}${esc(b.label)}
             </button>
             <button type="button" class="brand-del" data-del="${b.key}" aria-label="حذف" title="حذف">×</button>
           </span>
@@ -475,6 +475,10 @@ window.TaskModal = (function () {
         <span class="brand-add-wrap">
           <button type="button" class="brand-add-btn" id="tmBrandAddBtn">+ علامة جديدة</button>
           <span class="brand-add-form" id="tmBrandAddForm" hidden>
+            <span class="brand-logo-preview" id="tmBrandLogoPrev" title="ارفع شعار">
+              <span class="brand-logo-empty">📷</span>
+            </span>
+            <input type="file" id="tmBrandLogoFile" accept="image/*" hidden/>
             <input class="brand-add-input" id="tmBrandAddInput" placeholder="اسم البراند..." maxlength="24"/>
             <input type="color" class="brand-add-color" id="tmBrandAddColor" value="#e25b62"/>
             <button type="button" class="brand-add-save" id="tmBrandAddSave" aria-label="حفظ">
@@ -510,6 +514,10 @@ window.TaskModal = (function () {
       const addForm = $('#tmBrandAddForm');
       const addInp = $('#tmBrandAddInput');
       const addColor = $('#tmBrandAddColor');
+      const logoPrev = $('#tmBrandLogoPrev');
+      const logoFile = $('#tmBrandLogoFile');
+      let pendingLogo = null; // data URL, captured between selecting file and clicking save
+
       addBtn?.addEventListener('click', () => {
         addBtn.hidden = true;
         addForm.hidden = false;
@@ -517,14 +525,45 @@ window.TaskModal = (function () {
       });
       $('#tmBrandAddCancel')?.addEventListener('click', () => {
         addInp.value = '';
+        pendingLogo = null;
+        logoPrev.innerHTML = '<span class="brand-logo-empty">📷</span>';
         addBtn.hidden = false;
         addForm.hidden = true;
       });
+
+      logoPrev?.addEventListener('click', () => logoFile.click());
+      logoFile?.addEventListener('change', e => {
+        const f = e.target.files && e.target.files[0];
+        if (!f) return;
+        if (!f.type.startsWith('image/')) { alert('يجب اختيار صورة'); return; }
+        const reader = new FileReader();
+        reader.onload = ev => {
+          const img = new Image();
+          img.onload = () => {
+            // Resize to max 80x80 — small logos for chip display
+            const MAX = 80;
+            let w = img.width, h = img.height;
+            if (w > h) { if (w > MAX) { h = h * MAX / w; w = MAX; } }
+            else      { if (h > MAX) { w = w * MAX / h; h = MAX; } }
+            const canvas = document.createElement('canvas');
+            canvas.width = w; canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, w, h);
+            pendingLogo = canvas.toDataURL('image/png');
+            logoPrev.innerHTML = `<img src="${pendingLogo}" alt=""/>`;
+          };
+          img.src = ev.target.result;
+        };
+        reader.readAsDataURL(f);
+        logoFile.value = '';
+      });
+
       const saveAdd = () => {
         const label = (addInp.value || '').trim();
         if (!label) { addInp.focus(); return; }
-        const b = D.addBrand(label, addColor.value);
+        const b = D.addBrand(label, addColor.value, pendingLogo);
         if (b) state.brandKeys.push(b.key);
+        pendingLogo = null;
         renderBrands();
       };
       $('#tmBrandAddSave')?.addEventListener('click', saveAdd);

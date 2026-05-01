@@ -234,9 +234,10 @@ window.TaskDetailModal = (function () {
               <div class="brand-picker" id="tdBrandPicker">
                 ${allBrands.map(b => {
                   const sel = (t.brandKeys || []).includes(b.key);
+                  const logo = b.logoFile ? `<span class="brand-logo"><img src="${b.logoFile}" alt=""/></span>` : '<i class="bdot"></i>';
                   return `
                     <button type="button" class="brand-pick ${sel ? 'selected' : ''}" data-key="${b.key}" style="--brand-color:${b.color}">
-                      <i class="bdot"></i>${esc(b.label)}
+                      ${logo}${esc(b.label)}
                     </button>
                   `;
                 }).join('')}
@@ -246,7 +247,8 @@ window.TaskDetailModal = (function () {
               <div class="td-brand-chips">
                 ${(t.brandKeys || []).map(k => {
                   const b = D.findBrand(k); if (!b) return '';
-                  return `<span class="brand-chip" style="--brand-color:${b.color}">${esc(b.label)}</span>`;
+                  const logo = b.logoFile ? `<span class="brand-chip-logo"><img src="${b.logoFile}" alt=""/></span>` : '';
+                  return `<span class="brand-chip" style="--brand-color:${b.color}">${logo}${esc(b.label)}</span>`;
                 }).join('') || '<span class="muted">—</span>'}
               </div>
             `}

@@ -61,7 +61,8 @@
           <div class="task-brands">
             ${brandKeys.map(k => {
               const b = D.findBrand(k); if (!b) return '';
-              return `<span class="brand-chip sm" style="--brand-color:${b.color}">${esc(b.label)}</span>`;
+              const logo = b.logoFile ? `<span class="brand-chip-logo"><img src="${b.logoFile}" alt=""/></span>` : '';
+              return `<span class="brand-chip sm" style="--brand-color:${b.color}">${logo}${esc(b.label)}</span>`;
             }).join('')}
           </div>
         ` : ''}

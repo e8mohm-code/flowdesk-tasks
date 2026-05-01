@@ -76,11 +76,16 @@ window.APP_DATA = (function () {
   }
   function getAllBrands() { return BRANDS; }
   function findBrand(key) { return BRANDS.find(b => b.key === key) || null; }
-  function addBrand(label, color) {
+  function addBrand(label, color, logoFile) {
     if (!label || !label.trim()) return null;
     const key = 'br-' + Date.now();
     const palette = ['#e25b62','#f0a042','#2bb673','#36b3d4','#4f7af0','#7c5cf0','#ee6f9c','#0ea5e9','#84cc16'];
-    const b = { key, label: label.trim(), color: color || palette[BRANDS.length % palette.length] };
+    const b = {
+      key,
+      label: label.trim(),
+      color: color || palette[BRANDS.length % palette.length],
+      logoFile: logoFile || null, // optional small data URL of the brand logo
+    };
     BRANDS.push(b);
     saveBrands();
     return b;

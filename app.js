@@ -54,7 +54,8 @@ LAYOUT.render('tasks');
       <div class="task-brands">
         ${brandKeys.map(k => {
           const b = D.findBrand(k); if (!b) return '';
-          return `<span class="brand-chip sm" style="--brand-color:${b.color}">${escapeHtml(b.label)}</span>`;
+          const logo = b.logoFile ? `<span class="brand-chip-logo"><img src="${b.logoFile}" alt=""/></span>` : '';
+          return `<span class="brand-chip sm" style="--brand-color:${b.color}">${logo}${escapeHtml(b.label)}</span>`;
         }).join('')}
       </div>` : '';
     const primaryBrandColor = brandKeys.length ? (D.findBrand(brandKeys[0])?.color || '') : '';
