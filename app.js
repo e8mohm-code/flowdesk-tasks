@@ -50,12 +50,14 @@ LAYOUT.render('tasks');
     const overdue = isOverdue(task);
     const tagColor = D.getTagColor(task.tagKey);
     const brandKeys = task.brandKeys || [];
-    const brandStrip = brandKeys.length ? `
+    // Show extra brand chips ONLY when there's more than one brand on this task —
+    // the primary brand is already represented by the peeking emblem.
+    const extraBrands = brandKeys.slice(1);
+    const brandStrip = extraBrands.length ? `
       <div class="task-brands">
-        ${brandKeys.map(k => {
+        ${extraBrands.map(k => {
           const b = D.findBrand(k); if (!b) return '';
-          const logo = b.logoFile ? `<span class="brand-chip-logo"><img src="${b.logoFile}" alt=""/></span>` : '';
-          return `<span class="brand-chip sm" style="--brand-color:${b.color}">${logo}${escapeHtml(b.label)}</span>`;
+          return `<span class="brand-chip sm" style="--brand-color:${b.color}">${escapeHtml(b.label)}</span>`;
         }).join('')}
       </div>` : '';
     const primaryBrand = brandKeys.length ? D.findBrand(brandKeys[0]) : null;

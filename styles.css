@@ -5172,20 +5172,23 @@ body.modal-open { overflow: hidden; }
 .task[data-has-brand="true"],
 .ph-task[data-has-brand="true"] {
   overflow: visible;
+  /* Shrink the card from the visually-LEFT side so the peeking emblem
+     has room to appear fully without being clipped by the parent. */
+  margin-inline-end: 24px;
 }
 .task-brand-emblem {
   position: absolute;
   top: 50%;
-  inset-inline-end: -14px;       /* RTL: peek from the visually-LEFT edge */
+  inset-inline-end: -22px;       /* RTL: peek from the visually-LEFT edge */
   transform: translateY(-50%);
-  width: 32px;
-  height: 32px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
   overflow: hidden;
   background: #fff;
   border: 2.5px solid var(--brand-color, var(--accent));
   box-shadow:
-    -2px 2px 6px rgba(15,23,42,0.10),
+    -3px 2px 8px rgba(15,23,42,0.12),
     0 0 0 1px rgba(255,255,255,0.6) inset;
   z-index: 4;
   pointer-events: none; /* don't block clicks */
@@ -5197,10 +5200,11 @@ body.modal-open { overflow: hidden; }
   display: block;
 }
 /* Compact employee-column cards: smaller emblem to match smaller card */
+.task.compact[data-has-brand="true"] { margin-inline-end: 20px; }
 .task.compact .task-brand-emblem {
-  width: 26px;
-  height: 26px;
-  inset-inline-end: -11px;
+  width: 30px;
+  height: 30px;
+  inset-inline-end: -16px;
   border-width: 2px;
 }
 /* Don't let the priority strip peek past the rounded edges of branded cards */

@@ -64,15 +64,15 @@
           <h4 class="ph-task-title">${esc(t.title)}</h4>
           ${overdue ? '<span class="overdue-pill">متأخرة</span>' : ''}
         </div>
-        ${brandKeys.length ? `
-          <div class="task-brands">
-            ${brandKeys.map(k => {
-              const b = D.findBrand(k); if (!b) return '';
-              const logo = b.logoFile ? `<span class="brand-chip-logo"><img src="${b.logoFile}" alt=""/></span>` : '';
-              return `<span class="brand-chip sm" style="--brand-color:${b.color}">${logo}${esc(b.label)}</span>`;
-            }).join('')}
-          </div>
-        ` : ''}
+        ${(() => {
+          // Primary brand → shown as peeking emblem; only show chips for any extras
+          const extras = brandKeys.slice(1);
+          if (!extras.length) return '';
+          return `<div class="task-brands">${extras.map(k => {
+            const b = D.findBrand(k); if (!b) return '';
+            return `<span class="brand-chip sm" style="--brand-color:${b.color}">${esc(b.label)}</span>`;
+          }).join('')}</div>`;
+        })()}
         <div class="ph-task-foot">
           ${t.tag ? `<span class="tag" style="--tag-color:${getTagColor(t.tagKey)}">${esc(t.tag)}</span>` : ''}
           ${t.due ? `<span class="due">
