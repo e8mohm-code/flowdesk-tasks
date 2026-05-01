@@ -5164,3 +5164,47 @@ body.modal-open { overflow: hidden; }
   font-size: 9.5px;
   padding: 1.5px 6px;
 }
+
+/* ============================================================
+   Brand emblem — circular logo peeking from the start edge
+   of a task card, like a badge stuck to the corner.
+   ============================================================ */
+.task[data-has-brand="true"],
+.ph-task[data-has-brand="true"] {
+  overflow: visible;
+}
+.task-brand-emblem {
+  position: absolute;
+  top: 50%;
+  inset-inline-end: -14px;       /* RTL: peek from the visually-LEFT edge */
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #fff;
+  border: 2.5px solid var(--brand-color, var(--accent));
+  box-shadow:
+    -2px 2px 6px rgba(15,23,42,0.10),
+    0 0 0 1px rgba(255,255,255,0.6) inset;
+  z-index: 4;
+  pointer-events: none; /* don't block clicks */
+}
+.task-brand-emblem img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+/* Compact employee-column cards: smaller emblem to match smaller card */
+.task.compact .task-brand-emblem {
+  width: 26px;
+  height: 26px;
+  inset-inline-end: -11px;
+  border-width: 2px;
+}
+/* Don't let the priority strip peek past the rounded edges of branded cards */
+.task[data-has-brand="true"]::before,
+.ph-task[data-has-brand="true"]::before {
+  border-radius: 14px 0 0 14px;
+}

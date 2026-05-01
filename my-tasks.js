@@ -49,9 +49,16 @@
     const overdue = isOverdue(t);
     const e = D.findEmployee(t.assignee);
     const brandKeys = t.brandKeys || [];
-    const primaryBrandColor = brandKeys.length ? (D.findBrand(brandKeys[0])?.color || '') : '';
+    const primaryBrand = brandKeys.length ? D.findBrand(brandKeys[0]) : null;
+    const primaryBrandColor = primaryBrand ? primaryBrand.color : '';
+    const brandEmblem = primaryBrand && primaryBrand.logoFile ? `
+      <span class="task-brand-emblem" style="--brand-color:${primaryBrand.color}" title="${esc(primaryBrand.label)}">
+        <img src="${primaryBrand.logoFile}" alt="${esc(primaryBrand.label)}"/>
+      </span>
+    ` : '';
     return `
       <article class="ph-task" data-task="${t.id}" ${overdue ? 'data-overdue="true"' : ''} data-priority="${t.priority}" ${primaryBrandColor ? `style="--task-brand:${primaryBrandColor}" data-has-brand="true"` : ''}>
+        ${brandEmblem}
         <div class="ph-task-row">
           <span class="task-prio ${t.priority}"></span>
           <h4 class="ph-task-title">${esc(t.title)}</h4>

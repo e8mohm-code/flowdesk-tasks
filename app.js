@@ -58,9 +58,16 @@ LAYOUT.render('tasks');
           return `<span class="brand-chip sm" style="--brand-color:${b.color}">${logo}${escapeHtml(b.label)}</span>`;
         }).join('')}
       </div>` : '';
-    const primaryBrandColor = brandKeys.length ? (D.findBrand(brandKeys[0])?.color || '') : '';
+    const primaryBrand = brandKeys.length ? D.findBrand(brandKeys[0]) : null;
+    const primaryBrandColor = primaryBrand ? primaryBrand.color : '';
+    const brandEmblem = primaryBrand && primaryBrand.logoFile ? `
+      <span class="task-brand-emblem" style="--brand-color:${primaryBrand.color}" title="${escapeHtml(primaryBrand.label)}">
+        <img src="${primaryBrand.logoFile}" alt="${escapeHtml(primaryBrand.label)}"/>
+      </span>
+    ` : '';
     return `
       <article class="task ${compact ? 'compact' : ''}" data-task="${task.id}" data-priority="${task.priority}" draggable="true" ${overdue ? 'data-overdue="true"' : ''} ${primaryBrandColor ? `style="--task-brand:${primaryBrandColor}" data-has-brand="true"` : ''}>
+        ${brandEmblem}
         <div class="task-row">
           <span class="task-prio ${task.priority}"></span>
           <h4 class="task-title">${escapeHtml(task.title)}</h4>
