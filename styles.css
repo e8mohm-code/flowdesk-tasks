@@ -5282,3 +5282,86 @@ body.modal-open { overflow: hidden; }
 }
 .td-ext-form input { font-size: 12.5px; padding: 6px 10px; }
 .td-ext-form .ghost-btn { font-size: 11.5px; padding: 6px 10px; align-self: flex-start; }
+
+/* ============================================================
+   Subtask rows with optional attached document
+   ============================================================ */
+.td-sub-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px; }
+.td-sub {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font-size: 13px;
+}
+.td-sub.done .td-sub-text { text-decoration: line-through; color: var(--ink-3); }
+
+.td-sub-toggle {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  display: grid; place-items: center;
+  flex: 0 0 22px;
+}
+.td-sub-toggle[disabled] { cursor: default; }
+.td-sub-check {
+  display: grid; place-items: center;
+  width: 20px; height: 20px;
+  border-radius: 6px;
+  border: 1.5px solid var(--line-2);
+  background: var(--surface);
+  color: var(--green);
+  font-weight: 800;
+  font-size: 14px;
+}
+.td-sub.done .td-sub-check {
+  background: var(--green);
+  color: #fff;
+  border-color: var(--green);
+}
+
+.td-sub-text { flex: 1; min-width: 0; }
+
+.td-sub-att {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 8px;
+  background: color-mix(in srgb, var(--accent), transparent 86%);
+  border: 1px solid color-mix(in srgb, var(--accent), transparent 70%);
+  color: var(--accent);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  text-decoration: none;
+  max-width: 180px;
+  overflow: hidden;
+}
+.td-sub-att:hover { background: color-mix(in srgb, var(--accent), transparent 75%); }
+.td-sub-att-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.td-sub-attach-btn,
+.td-sub-del-btn {
+  width: 26px; height: 26px;
+  display: grid; place-items: center;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  border-radius: 50%;
+  cursor: pointer;
+  color: var(--ink-3);
+  transition: all .15s var(--ease);
+  flex: 0 0 26px;
+}
+.td-sub-attach-btn:hover { color: var(--accent); border-color: var(--accent); }
+.td-sub-del-btn { font-size: 16px; line-height: 1; }
+.td-sub-del-btn:hover { color: #fff; background: var(--red); border-color: var(--red); }
+
+.td-sub-add-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+.td-sub-add-row input { flex: 1; }
+.td-sub-add-row .ghost-btn { padding: 7px 14px; }

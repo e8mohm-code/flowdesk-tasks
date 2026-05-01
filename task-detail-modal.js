@@ -305,18 +305,42 @@ window.TaskDetailModal = (function () {
           </section>
         ` : ''}
 
-        ${subTotal ? `
+        ${(subTotal || canEdit) ? `
           <section class="td-section">
-            <h3>المهام الفرعية <span class="td-count">${subDone}/${subTotal}</span></h3>
-            <div class="td-sub-progress"><span style="width:${subPct}%"></span></div>
+            <h3>الخطوات / المهام الفرعية ${subTotal ? `<span class="td-count">${subDone}/${subTotal}</span>` : ''}</h3>
+            ${subTotal ? `<div class="td-sub-progress"><span style="width:${subPct}%"></span></div>` : ''}
             <ul class="td-sub-list">
-              ${t.subtasks.map((s, i) => `
-                <li class="td-sub ${s.done ? 'done' : ''}" data-sub-i="${i}">
-                  <span class="td-sub-check">${s.done ? '✓' : ''}</span>
-                  <span>${esc(s.text)}</span>
-                </li>
-              `).join('')}
+              ${(t.subtasks || []).map((s, i) => {
+                const att = s.attachment;
+                return `
+                  <li class="td-sub ${s.done ? 'done' : ''}" data-sub-row="${i}">
+                    <button type="button" class="td-sub-toggle" data-sub-toggle="${i}" aria-label="تبديل" ${canEdit ? '' : 'disabled'}>
+                      <span class="td-sub-check">${s.done ? '✓' : ''}</span>
+                    </button>
+                    <span class="td-sub-text">${esc(s.text)}</span>
+                    ${att ? `
+                      <a class="td-sub-att" ${att.dataUrl ? `href="${att.dataUrl}" download="${esc(att.name)}"` : ''} title="${esc(att.name)}">
+                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 11-8.48-8.49l8.57-8.57A4 4 0 1118 8.84l-8.59 8.57a2 2 0 11-2.83-2.83l8.49-8.48"/></svg>
+                        <span class="td-sub-att-name">${esc(att.name)}</span>
+                      </a>
+                    ` : ''}
+                    ${canEdit ? `
+                      <button type="button" class="td-sub-attach-btn" data-sub-attach="${i}" title="${att ? 'استبدال المستند' : 'إرفاق مستند'}">
+                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 11-8.48-8.49l8.57-8.57A4 4 0 1118 8.84l-8.59 8.57a2 2 0 11-2.83-2.83l8.49-8.48"/></svg>
+                      </button>
+                      <button type="button" class="td-sub-del-btn" data-sub-del="${i}" aria-label="حذف الخطوة">×</button>
+                    ` : ''}
+                  </li>
+                `;
+              }).join('')}
             </ul>
+            ${canEdit ? `
+              <div class="td-sub-add-row">
+                <input type="text" class="field-input" id="tdSubAddInput" placeholder="أضف خطوة جديدة..." maxlength="120"/>
+                <button type="button" class="ghost-btn" id="tdSubAddBtn">إضافة</button>
+                <input type="file" id="tdSubFileInput" hidden/>
+              </div>
+            ` : ''}
           </section>
         ` : ''}
 
@@ -465,15 +489,95 @@ window.TaskDetailModal = (function () {
       });
     });
 
-    modal.querySelectorAll('[data-sub-i]').forEach(li => {
-      li.addEventListener('click', () => {
-        const idx = +li.dataset.subI;
+    /* ---------- SUBTASKS — add / toggle / attach / delete ---------- */
+    modal.querySelectorAll('[data-sub-toggle]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (!canEdit) return;
+        const idx = +btn.dataset.subToggle;
         const task = D.tasks.find(x => x.id === currentTaskId);
         if (!task || !task.subtasks) return;
         task.subtasks[idx].done = !task.subtasks[idx].done;
         D.saveTasks();
         render();
+        refresh();
       });
+    });
+
+    modal.querySelectorAll('[data-sub-del]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (!canEdit) return;
+        const idx = +btn.dataset.subDel;
+        const task = D.tasks.find(x => x.id === currentTaskId);
+        if (!task || !task.subtasks) return;
+        if (!confirm(`حذف الخطوة "${task.subtasks[idx].text}"؟`)) return;
+        task.subtasks.splice(idx, 1);
+        D.saveTasks();
+        render();
+        refresh();
+      });
+    });
+
+    const subAddInput = modal.querySelector('#tdSubAddInput');
+    const subAddBtn = modal.querySelector('#tdSubAddBtn');
+    const subFileInput = modal.querySelector('#tdSubFileInput');
+    function addSubtask() {
+      const txt = (subAddInput.value || '').trim();
+      if (!txt) { subAddInput.focus(); return; }
+      const task = D.tasks.find(x => x.id === currentTaskId);
+      if (!task) return;
+      if (!Array.isArray(task.subtasks)) task.subtasks = [];
+      task.subtasks.push({ text: txt, done: false, attachment: null });
+      subAddInput.value = '';
+      D.saveTasks();
+      render();
+      refresh();
+    }
+    subAddBtn?.addEventListener('click', addSubtask);
+    subAddInput?.addEventListener('keypress', e => {
+      if (e.key === 'Enter') { e.preventDefault(); addSubtask(); }
+    });
+
+    let attachTargetIdx = -1;
+    modal.querySelectorAll('[data-sub-attach]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (!canEdit) return;
+        attachTargetIdx = +btn.dataset.subAttach;
+        subFileInput?.click();
+      });
+    });
+    subFileInput?.addEventListener('change', e => {
+      const f = e.target.files && e.target.files[0];
+      if (!f || attachTargetIdx < 0) return;
+      // Cap at ~2MB to avoid blowing localStorage
+      if (f.size > 2 * 1024 * 1024) {
+        if (!confirm(`الملف كبير (${(f.size / 1024 / 1024).toFixed(1)}MB). قد لا يُحفظ. تابع؟`)) {
+          subFileInput.value = '';
+          attachTargetIdx = -1;
+          return;
+        }
+      }
+      const reader = new FileReader();
+      reader.onerror = () => alert('تعذّر قراءة الملف');
+      reader.onload = ev => {
+        const task = D.tasks.find(x => x.id === currentTaskId);
+        if (!task || !task.subtasks) return;
+        task.subtasks[attachTargetIdx].attachment = {
+          name: f.name,
+          size: f.size,
+          type: f.type || '',
+          dataUrl: ev.target.result,
+        };
+        try {
+          D.saveTasks();
+        } catch (err) {
+          alert('فشل الحفظ — قد يكون الملف كبير جداً');
+        }
+        attachTargetIdx = -1;
+        subFileInput.value = '';
+        render();
+        refresh();
+      };
+      reader.readAsDataURL(f);
     });
 
     // Live state for edits (collected on save)
