@@ -68,7 +68,7 @@ LAYOUT.render('favorites');
         <footer class="fav-foot">
           ${e ? `
             <span class="fav-owner" style="--emp-color:${e.color}">
-              <span class="ov-av sm"><img src="https://i.pravatar.cc/40?img=${e.avatar}" alt=""/></span>
+              <span class="ov-av sm"><img src="${D.avatarUrl(e, 40)}" alt=""/></span>
               <span class="fo-text"><b>${escapeHtml(e.name)}</b><span class="muted" style="font-size:11px">${escapeHtml(e.role)}</span></span>
             </span>` : `<span class="muted" style="display:inline-flex;align-items:center;gap:6px"><span class="ov-av sm" style="background:var(--surface-soft)"></span> غير مسندة</span>`}
           <span class="due">

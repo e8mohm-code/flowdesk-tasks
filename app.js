@@ -83,7 +83,7 @@ LAYOUT.render('tasks');
         <article class="emp-card" data-zone="emp" data-emp="${emp.id}" style="--emp-color:${emp.color}">
           <header class="emp-head">
             <a class="emp-avatar" href="employee.html?id=${emp.id}" aria-label="ملف ${escapeHtml(emp.name)}">
-              <img src="https://i.pravatar.cc/96?img=${emp.avatar}" alt=""/>
+              <img src="${D.avatarUrl(emp, 96)}" alt=""/>
             </a>
             <div class="emp-info">
               <h3 class="emp-name"><a href="employee.html?id=${emp.id}">${escapeHtml(emp.name)}</a></h3>
@@ -151,7 +151,7 @@ LAYOUT.render('tasks');
         : `background: linear-gradient(90deg, #7aa2ff, ${emp.color})`;
       return `
         <div class="overview-row ${overdue>0?'has-overdue':''}" style="--emp-color:${emp.color}">
-          <span class="ov-av"><img src="https://i.pravatar.cc/40?img=${emp.avatar}" alt=""/></span>
+          <span class="ov-av"><img src="${D.avatarUrl(emp, 40)}" alt=""/></span>
           <span><b class="ov-name">${escapeHtml(emp.name)}</b><span class="ov-role">${escapeHtml(emp.role)}</span></span>
           <div class="ov-bar"><span style="width:${pct}%; ${fill}"></span></div>
           <span class="ov-num">${list.length}${overdue ? ` <small style="color:var(--red)">(${overdue})</small>` : ''}</span>

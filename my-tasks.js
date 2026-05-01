@@ -28,7 +28,7 @@
           <h1>${esc(user.name.split(' ')[0])}</h1>
         </div>
         <span class="ph-avatar" style="--emp-color:${user.color}">
-          <img src="https://i.pravatar.cc/120?img=${user.avatar}" alt=""/>
+          <img src="${D.avatarUrl(user, 120)}" alt=""/>
           <span class="ph-lv">Lv ${level}</span>
         </span>
       </div>
@@ -134,7 +134,7 @@
     return `
       <div class="ph-profile-card" style="--emp-color:${user.color}">
         <div class="ph-profile-avatar">
-          <img src="https://i.pravatar.cc/240?img=${user.avatar}" alt=""/>
+          <img src="${D.avatarUrl(user, 240)}" alt=""/>
           <span class="ph-lv lg">Lv ${level}</span>
         </div>
         <h2>${esc(user.name)}</h2>

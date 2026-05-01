@@ -118,7 +118,7 @@ LAYOUT.render('reports');
       return `
         <div class="leader-row" style="--emp-color:${row.emp.color}">
           <span class="leader-rank">${medal}</span>
-          <span class="ov-av"><img src="https://i.pravatar.cc/40?img=${row.emp.avatar}" alt=""/></span>
+          <span class="ov-av"><img src="${D.avatarUrl(row.emp, 40)}" alt=""/></span>
           <div class="leader-info">
             <b class="ov-name">${escapeHtml(row.emp.name)}</b>
             <span class="ov-role">${escapeHtml(row.emp.role)} • ${row.open} مفتوحة</span>
@@ -136,7 +136,7 @@ LAYOUT.render('reports');
       if (!e) return '';
       return `
         <div class="act-row" style="--emp-color:${e.color}">
-          <span class="ov-av"><img src="https://i.pravatar.cc/40?img=${e.avatar}" alt=""/></span>
+          <span class="ov-av"><img src="${D.avatarUrl(e, 40)}" alt=""/></span>
           <div class="act-text">
             <span><b>${escapeHtml(e.name)}</b> ${escapeHtml(a.what)} <span class="act-target">«${escapeHtml(a.target)}»</span></span>
             <span class="act-when">${escapeHtml(a.when)}</span>

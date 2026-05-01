@@ -94,7 +94,7 @@ LAYOUT.render('notifications');
             <span>${n.text}</span>
             <span class="muted notif-when">${escapeHtml(n.when)}</span>
           </div>
-          ${e ? `<span class="ov-av sm" style="--emp-color:${e.color}"><img src="https://i.pravatar.cc/40?img=${e.avatar}" alt=""/></span>` : ''}
+          ${e ? `<span class="ov-av sm" style="--emp-color:${e.color}"><img src="${D.avatarUrl(e, 40)}" alt=""/></span>` : ''}
           ${n.unread ? '<span class="unread-dot"></span>' : ''}
         </div>
       `;

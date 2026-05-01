@@ -8,6 +8,7 @@ window.EmployeeEditModal = (function () {
 
   let mounted = false;
   let editingId = null;
+  let formState = null;
 
   const COLOR_PALETTE = [
     '#4f7af0','#7c5cf0','#2bb673','#f0a042','#ee6f9c','#36b3d4',
@@ -39,13 +40,15 @@ window.EmployeeEditModal = (function () {
     const D = window.APP_DATA;
     const isEdit = !!editingId;
     const e = isEdit ? D.findEmployee(editingId) : null;
-    const form = isEdit ? { ...e } : {
+    formState = isEdit ? { ...e } : {
       name: '', role: '', email: '', phone: '',
       loginId: '', password: '',
-      avatar: 1, color: COLOR_PALETTE[Math.floor(Math.random() * COLOR_PALETTE.length)],
+      avatar: 1, avatarFile: null,
+      color: COLOR_PALETTE[Math.floor(Math.random() * COLOR_PALETTE.length)],
       level: 'Mid', joined: new Date().toISOString().slice(0,10),
       department: 'engineering', permRole: 'employee', active: true,
     };
+    const form = formState;
 
     const modal = document.getElementById('eeModal');
     modal.innerHTML = `
@@ -63,11 +66,24 @@ window.EmployeeEditModal = (function () {
           <label class="field-label">المظهر</label>
           <div class="ee-look-row">
             <div class="ee-avatar-preview" style="--emp-color:${form.color}">
-              <img id="eePreviewImg" src="https://i.pravatar.cc/120?img=${form.avatar}" alt=""/>
+              <img id="eePreviewImg" src="${D.avatarUrl(form, 120)}" alt=""/>
+              <button type="button" class="ee-avatar-upload" id="eeAvatarUploadBtn" title="رفع صورة من جهازك">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              </button>
+              <input type="file" id="eeAvatarFile" accept="image/*" hidden/>
             </div>
             <div class="ee-look-controls">
+              <div class="ee-upload-row">
+                <button type="button" class="ee-upload-btn" id="eeAvatarUploadBtn2">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                  رفع صورة من الجهاز
+                </button>
+                <button type="button" class="ee-upload-clear" id="eeAvatarClearBtn" ${form.avatarFile ? '' : 'hidden'}>
+                  إزالة الصورة المرفوعة
+                </button>
+              </div>
               <div class="ee-look-line">
-                <span class="mini-label">رقم الصورة</span>
+                <span class="mini-label">أو اختر رقم صورة افتراضية</span>
                 <div class="ee-avatar-picker">
                   <button type="button" class="ee-avatar-btn" id="eeAvatarPrev" aria-label="السابق">‹</button>
                   <input type="number" id="eeAvatar" class="field-input" min="1" max="70" value="${form.avatar}" />
@@ -202,19 +218,70 @@ window.EmployeeEditModal = (function () {
 
     // Avatar preview live update
     function refreshPreview() {
-      const num = $('#eeAvatar').value;
-      const color = document.querySelector('.ee-avatar-preview').style.getPropertyValue('--emp-color');
-      $('#eePreviewImg').src = `https://i.pravatar.cc/120?img=${num}`;
+      const img = $('#eePreviewImg');
+      if (formState.avatarFile && typeof formState.avatarFile === 'string' && formState.avatarFile.startsWith('data:')) {
+        img.src = formState.avatarFile;
+      } else {
+        const num = parseInt($('#eeAvatar').value, 10) || 1;
+        img.src = `https://i.pravatar.cc/120?img=${num}`;
+      }
+      $('#eeAvatarClearBtn').hidden = !formState.avatarFile;
     }
-    $('#eeAvatar').addEventListener('input', refreshPreview);
+    $('#eeAvatar').addEventListener('input', () => {
+      formState.avatar = parseInt($('#eeAvatar').value, 10) || 1;
+      refreshPreview();
+    });
     $('#eeAvatarPrev').addEventListener('click', () => {
       const inp = $('#eeAvatar');
       inp.value = Math.max(1, (parseInt(inp.value, 10) || 1) - 1);
+      formState.avatar = parseInt(inp.value, 10);
       refreshPreview();
     });
     $('#eeAvatarNext').addEventListener('click', () => {
       const inp = $('#eeAvatar');
       inp.value = Math.min(70, (parseInt(inp.value, 10) || 1) + 1);
+      formState.avatar = parseInt(inp.value, 10);
+      refreshPreview();
+    });
+
+    // File upload
+    const fileInput = $('#eeAvatarFile');
+    function triggerUpload() { fileInput.click(); }
+    $('#eeAvatarUploadBtn').addEventListener('click', triggerUpload);
+    $('#eeAvatarUploadBtn2').addEventListener('click', triggerUpload);
+
+    fileInput.addEventListener('change', e => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      if (!file.type.startsWith('image/')) { alert('يجب اختيار صورة'); return; }
+
+      const reader = new FileReader();
+      reader.onload = ev => {
+        const img = new Image();
+        img.onload = () => {
+          // Resize to max 200x200, keep aspect ratio
+          const MAX = 200;
+          let w = img.width, h = img.height;
+          if (w > h) { if (w > MAX) { h = h * MAX / w; w = MAX; } }
+          else      { if (h > MAX) { w = w * MAX / h; h = MAX; } }
+          const canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, w, h);
+          formState.avatarFile = canvas.toDataURL('image/jpeg', 0.82);
+          refreshPreview();
+        };
+        img.onerror = () => alert('تعذّر قراءة الصورة');
+        img.src = ev.target.result;
+      };
+      reader.onerror = () => alert('تعذّر قراءة الملف');
+      reader.readAsDataURL(file);
+      // reset input so same file can be re-selected
+      fileInput.value = '';
+    });
+
+    $('#eeAvatarClearBtn').addEventListener('click', () => {
+      formState.avatarFile = null;
       refreshPreview();
     });
 
@@ -289,6 +356,7 @@ window.EmployeeEditModal = (function () {
       role:       $('#eeRole').value.trim(),
       email:      $('#eeEmail').value.trim(),
       avatar:     parseInt($('#eeAvatar').value, 10) || 1,
+      avatarFile: formState.avatarFile || null,
       color:      document.querySelector('.ee-avatar-preview').style.getPropertyValue('--emp-color'),
       level:      document.querySelector('#eeLevel button.active')?.dataset.val || 'Mid',
       joined:     $('#eeJoined').value || new Date().toISOString().slice(0,10),

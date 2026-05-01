@@ -76,7 +76,7 @@ LAYOUT.render('team');
     <section class="emp-profile-hero" style="--emp-color:${emp.color}">
       <div class="profile-avatar-block">
         <div class="profile-avatar">
-          <img src="https://i.pravatar.cc/240?img=${emp.avatar}" alt=""/>
+          <img src="${D.avatarUrl(emp, 240)}" alt=""/>
           <span class="profile-lv">Lv ${level}</span>
         </div>
         <div class="profile-online">

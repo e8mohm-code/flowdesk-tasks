@@ -303,6 +303,17 @@ window.APP_DATA = (function () {
   }
   function findEmployee(id) { return employees.find(e => e.id === id) || null; }
 
+  // Build a usable image URL for an employee.
+  // Priority: 1) custom uploaded data URL  2) pravatar by number  3) gray fallback
+  function avatarUrl(emp, size) {
+    const s = size || 96;
+    if (!emp) return `https://i.pravatar.cc/${s}?img=1`;
+    if (typeof emp.avatarFile === 'string' && emp.avatarFile.startsWith('data:')) return emp.avatarFile;
+    if (typeof emp.avatar === 'string' && (emp.avatar.startsWith('http') || emp.avatar.startsWith('data:'))) return emp.avatar;
+    const num = emp.avatar || 1;
+    return `https://i.pravatar.cc/${s}?img=${num}`;
+  }
+
   /* ============================================================
      CURRENT USER + PERMISSIONS
      ============================================================ */
@@ -485,6 +496,7 @@ window.APP_DATA = (function () {
     isOverdue,
     escapeHtml,
     findEmployee,
+    avatarUrl,
     DEPARTMENTS,
     findDepartment,
     getCurrentUser,

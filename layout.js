@@ -27,7 +27,7 @@ window.LAYOUT = (function () {
     const user = D ? D.getCurrentUser() : null;
     const canCreate = D && D.canCreateTasks();
     const userColor = user ? user.color : '#94a3b8';
-    const userAvatar = user ? `https://i.pravatar.cc/64?img=${user.avatar}` : 'https://i.pravatar.cc/64?img=47';
+    const userAvatar = user ? D.avatarUrl(user, 64) : 'https://i.pravatar.cc/64?img=47';
     const ROLE_LABEL = { manager: 'مدير', supervisor: 'مشرف', employee: 'موظف' };
 
     return `

@@ -133,7 +133,7 @@ window.TaskDetailModal = (function () {
             <span class="td-label">المسند إليه</span>
             ${e ? `
               <a class="td-assignee" href="employee.html?id=${e.id}" style="--emp-color:${e.color}">
-                <span class="ov-av sm"><img src="https://i.pravatar.cc/40?img=${e.avatar}" alt=""/></span>
+                <span class="ov-av sm"><img src="${D.avatarUrl(e, 40)}" alt=""/></span>
                 <span class="td-emp-text">
                   <b>${esc(e.name)}</b>
                   <small>${esc(e.role)}</small>
@@ -224,7 +224,7 @@ window.TaskDetailModal = (function () {
                 if (!w) return '';
                 return `
                   <a href="employee.html?id=${w.id}" class="td-watcher-chip" style="--emp-color:${w.color}">
-                    <span class="ov-av sm"><img src="https://i.pravatar.cc/40?img=${w.avatar}" alt=""/></span>
+                    <span class="ov-av sm"><img src="${D.avatarUrl(w, 40)}" alt=""/></span>
                     ${esc(w.name)}
                   </a>
                 `;

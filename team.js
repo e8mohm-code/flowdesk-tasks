@@ -68,7 +68,7 @@ LAYOUT.render('team');
         <article class="team-card ${inactive ? 'inactive' : ''}" style="--emp-color:${emp.color}" data-emp-link="${emp.id}">
           <header class="team-card-head">
             <a href="employee.html?id=${emp.id}" class="emp-avatar lg" aria-label="عرض ${escapeHtml(emp.name)}">
-              <img src="https://i.pravatar.cc/120?img=${emp.avatar}" alt=""/>
+              <img src="${D.avatarUrl(emp, 120)}" alt=""/>
               <span class="lv-badge">Lv ${level}</span>
             </a>
             <div class="emp-info">
@@ -200,7 +200,7 @@ LAYOUT.render('team');
       return `
         <div class="leader-row" style="--emp-color:${row.emp.color}">
           <span class="leader-rank">${medal}</span>
-          <span class="ov-av"><img src="https://i.pravatar.cc/40?img=${row.emp.avatar}" alt=""/></span>
+          <span class="ov-av"><img src="${D.avatarUrl(row.emp, 40)}" alt=""/></span>
           <div class="leader-info">
             <b class="ov-name">${escapeHtml(row.emp.name)}</b>
             <span class="ov-role">${escapeHtml(row.emp.role)}</span>

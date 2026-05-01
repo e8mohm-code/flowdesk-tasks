@@ -78,7 +78,7 @@ LAYOUT.render('tasks');
       </button>
       ${employees.map(emp => `
         <button type="button" class="assignee-row ${state.assignee === emp.id ? 'selected' : ''}" data-emp="${emp.id}" style="--emp-color:${emp.color}">
-          <span class="ov-av sm"><img src="https://i.pravatar.cc/40?img=${emp.avatar}" alt=""/></span>
+          <span class="ov-av sm"><img src="${D.avatarUrl(emp, 40)}" alt=""/></span>
           <span class="ai-text"><b>${escapeHtml(emp.name)}</b><span class="ai-sub">${escapeHtml(emp.role)}</span></span>
           <span class="check-mark"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l5 5 13-13"/></svg></span>
         </button>
@@ -102,7 +102,7 @@ LAYOUT.render('tasks');
       if (!e) return '';
       return `
         <span class="watcher-chip" style="--emp-color:${e.color}">
-          <span class="ov-av"><img src="https://i.pravatar.cc/40?img=${e.avatar}" alt=""/></span>
+          <span class="ov-av"><img src="${D.avatarUrl(e, 40)}" alt=""/></span>
           ${escapeHtml(e.name.split(' ')[0])}
           <button class="watcher-chip-x" type="button" data-rm="${e.id}" aria-label="إزالة">×</button>
         </span>
@@ -117,7 +117,7 @@ LAYOUT.render('tasks');
           const added = state.watchers.includes(emp.id);
           return `
             <button type="button" class="watcher-dropdown-row ${added ? 'added' : ''}" data-add="${emp.id}" style="--emp-color:${emp.color}" ${added ? 'disabled' : ''}>
-              <span class="ov-av"><img src="https://i.pravatar.cc/40?img=${emp.avatar}" alt=""/></span>
+              <span class="ov-av"><img src="${D.avatarUrl(emp, 40)}" alt=""/></span>
               <span><b>${escapeHtml(emp.name)}</b><span class="muted">${escapeHtml(emp.role)}</span></span>
               <span class="added-mark">${added ? '✓' : ''}</span>
             </button>

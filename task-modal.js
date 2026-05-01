@@ -292,7 +292,7 @@ window.TaskModal = (function () {
         </button>
         ${visible.map(emp => `
           <button type="button" class="ass-chip ${state.assignee === emp.id ? 'selected' : ''}" data-emp="${emp.id}" style="--emp-color:${emp.color}" title="${esc(emp.name)}">
-            <span class="ov-av sm"><img src="https://i.pravatar.cc/40?img=${emp.avatar}" alt=""/></span>
+            <span class="ov-av sm"><img src="${D.avatarUrl(emp, 40)}" alt=""/></span>
             <span class="ass-name">${esc(emp.name.split(' ')[0])}</span>
           </button>
         `).join('')}
@@ -312,7 +312,7 @@ window.TaskModal = (function () {
         const e = D.findEmployee(id); if (!e) return '';
         return `
           <span class="watcher-chip" style="--emp-color:${e.color}">
-            <span class="ov-av"><img src="https://i.pravatar.cc/40?img=${e.avatar}" alt=""/></span>
+            <span class="ov-av"><img src="${D.avatarUrl(e, 40)}" alt=""/></span>
             ${esc(e.name.split(' ')[0])}
             <button class="watcher-chip-x" type="button" data-rm="${e.id}" aria-label="إزالة">×</button>
           </span>
@@ -327,7 +327,7 @@ window.TaskModal = (function () {
             const added = state.watchers.includes(emp.id);
             return `
               <button type="button" class="watcher-dropdown-row ${added ? 'added' : ''}" data-add="${emp.id}" style="--emp-color:${emp.color}" ${added ? 'disabled' : ''}>
-                <span class="ov-av"><img src="https://i.pravatar.cc/40?img=${emp.avatar}" alt=""/></span>
+                <span class="ov-av"><img src="${D.avatarUrl(emp, 40)}" alt=""/></span>
                 <span><b>${esc(emp.name)}</b><span class="muted">${esc(emp.role)}</span></span>
                 <span class="added-mark">${added ? '✓' : ''}</span>
               </button>
