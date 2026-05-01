@@ -31,7 +31,7 @@ LAYOUT.render('team');
   }
 
   /* ---------- Compute stats ---------- */
-  const allTasks = D.tasks.filter(t => t.assignee === emp.id);
+  const allTasks = D.tasks.filter(t => D.isAssignedTo(t, emp.id));
   const open = allTasks.filter(t => !t.done);
   const overdueTasks = open.filter(isOverdue);
   const doneTasks = allTasks.filter(t => t.done);

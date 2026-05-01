@@ -48,13 +48,23 @@
   function taskCardHTML(t) {
     const overdue = isOverdue(t);
     const e = D.findEmployee(t.assignee);
+    const brandKeys = t.brandKeys || [];
+    const primaryBrandColor = brandKeys.length ? (D.findBrand(brandKeys[0])?.color || '') : '';
     return `
-      <article class="ph-task" data-task="${t.id}" ${overdue ? 'data-overdue="true"' : ''} data-priority="${t.priority}">
+      <article class="ph-task" data-task="${t.id}" ${overdue ? 'data-overdue="true"' : ''} data-priority="${t.priority}" ${primaryBrandColor ? `style="--task-brand:${primaryBrandColor}" data-has-brand="true"` : ''}>
         <div class="ph-task-row">
           <span class="task-prio ${t.priority}"></span>
           <h4 class="ph-task-title">${esc(t.title)}</h4>
           ${overdue ? '<span class="overdue-pill">متأخرة</span>' : ''}
         </div>
+        ${brandKeys.length ? `
+          <div class="task-brands">
+            ${brandKeys.map(k => {
+              const b = D.findBrand(k); if (!b) return '';
+              return `<span class="brand-chip sm" style="--brand-color:${b.color}">${esc(b.label)}</span>`;
+            }).join('')}
+          </div>
+        ` : ''}
         <div class="ph-task-foot">
           <span class="tag" style="--tag-color:${getTagColor(t.tagKey)}">${esc(t.tag)}</span>
           <span class="due">
@@ -70,9 +80,9 @@
   /* ---------- TAB: مهامي ---------- */
   function renderTasksTab() {
     const list = D.tasks
-      .filter(t => t.assignee === user.id && !t.done)
+      .filter(t => D.isAssignedTo(t, user.id) && !t.done)
       .sort((a, b) => a.due.localeCompare(b.due));
-    const done = D.tasks.filter(t => t.assignee === user.id && t.done);
+    const done = D.tasks.filter(t => D.isAssignedTo(t, user.id) && t.done);
     const overdue = list.filter(isOverdue).length;
 
     return `
@@ -126,9 +136,9 @@
     const breakdown = D.getEmployeeXPBreakdown(user.id);
     const xp = breakdown.net;
     const level = D.levelFromXP(xp);
-    const open = D.tasks.filter(t => t.assignee === user.id && !t.done);
+    const open = D.tasks.filter(t => D.isAssignedTo(t, user.id) && !t.done);
     const overdue = open.filter(isOverdue).length;
-    const done = D.tasks.filter(t => t.assignee === user.id && t.done).length;
+    const done = D.tasks.filter(t => D.isAssignedTo(t, user.id) && t.done).length;
     const pct = ((xp % 250) / 250) * 100;
 
     return `
@@ -169,7 +179,7 @@
 
   /* ---------- TAB: التنبيهات ---------- */
   function renderAlertsTab() {
-    const myTasks = D.tasks.filter(t => t.assignee === user.id);
+    const myTasks = D.tasks.filter(t => D.isAssignedTo(t, user.id));
     const events = [];
 
     // Overdue alerts

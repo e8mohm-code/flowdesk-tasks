@@ -108,8 +108,8 @@ LAYOUT.render('reports');
   function renderLeaderboard() {
     const start = rangeStart();
     const data = employees.map(emp => {
-      const completed = tasks.filter(t => t.done && t.assignee === emp.id && t.doneAt && new Date(t.doneAt + 'T00:00:00') >= start).length;
-      const open = tasks.filter(t => !t.done && t.assignee === emp.id).length;
+      const completed = tasks.filter(t => t.done && D.isAssignedTo(t, emp.id) && t.doneAt && new Date(t.doneAt + 'T00:00:00') >= start).length;
+      const open = tasks.filter(t => !t.done && D.isAssignedTo(t, emp.id)).length;
       return { emp, completed, open };
     }).sort((a,b) => b.completed - a.completed);
 

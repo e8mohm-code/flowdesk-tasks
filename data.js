@@ -16,19 +16,82 @@ window.APP_DATA = (function () {
   const TAGS_LS_KEY = 'flowdesk-tags-v1';
   const USER_LS_KEY = 'flowdesk-current-user-v2';
   const EMPS_LS_KEY = 'flowdesk-employees-v1';
+  const DEPTS_LS_KEY = 'flowdesk-departments-v1';
+  const BRANDS_LS_KEY = 'flowdesk-brands-v1';
   const XP_BY_PRIORITY = { high: 50, medium: 25, low: 10 };
 
   /* ============================================================
-     DEPARTMENTS
+     DEPARTMENTS — seed + custom-addable, persisted
      ============================================================ */
-  const DEPARTMENTS = [
+  const SEED_DEPARTMENTS = [
     { key: 'engineering', label: 'الهندسة',         color: '#4f7af0' },
     { key: 'product',     label: 'المنتج والتصميم', color: '#7c5cf0' },
     { key: 'operations',  label: 'العمليات والدعم', color: '#2bb673' },
     { key: 'marketing',   label: 'التسويق',          color: '#ee6f9c' },
   ];
+  let DEPARTMENTS = [];
+  try {
+    const stored = localStorage.getItem(DEPTS_LS_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed) && parsed.length) DEPARTMENTS = parsed;
+    }
+  } catch (_) {}
+  if (!DEPARTMENTS.length) DEPARTMENTS = SEED_DEPARTMENTS.slice();
+
+  function saveDepartments() {
+    try { localStorage.setItem(DEPTS_LS_KEY, JSON.stringify(DEPARTMENTS)); } catch (_) {}
+  }
   function findDepartment(key) {
     return DEPARTMENTS.find(d => d.key === key) || { key: key, label: key, color: '#94a3b8' };
+  }
+  function addDepartment(label, color) {
+    if (!label || !label.trim()) return null;
+    const key = 'dept-' + Date.now();
+    const c = color || ['#4f7af0','#7c5cf0','#2bb673','#f0a042','#ee6f9c','#36b3d4'][DEPARTMENTS.length % 6];
+    const d = { key, label: label.trim(), color: c, custom: true };
+    DEPARTMENTS.push(d);
+    saveDepartments();
+    return d;
+  }
+  function deleteDepartment(key) {
+    DEPARTMENTS = DEPARTMENTS.filter(d => d.key !== key);
+    saveDepartments();
+  }
+
+  /* ============================================================
+     BRAND LABELS — colored chips per task ("Macroni", "Coca-Cola"…)
+     ============================================================ */
+  let BRANDS = [];
+  try {
+    const stored = localStorage.getItem(BRANDS_LS_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed)) BRANDS = parsed;
+    }
+  } catch (_) {}
+
+  function saveBrands() {
+    try { localStorage.setItem(BRANDS_LS_KEY, JSON.stringify(BRANDS)); } catch (_) {}
+  }
+  function getAllBrands() { return BRANDS; }
+  function findBrand(key) { return BRANDS.find(b => b.key === key) || null; }
+  function addBrand(label, color) {
+    if (!label || !label.trim()) return null;
+    const key = 'br-' + Date.now();
+    const palette = ['#e25b62','#f0a042','#2bb673','#36b3d4','#4f7af0','#7c5cf0','#ee6f9c','#0ea5e9','#84cc16'];
+    const b = { key, label: label.trim(), color: color || palette[BRANDS.length % palette.length] };
+    BRANDS.push(b);
+    saveBrands();
+    return b;
+  }
+  function updateBrand(key, patch) {
+    const b = BRANDS.find(x => x.key === key);
+    if (b) { Object.assign(b, patch); saveBrands(); }
+  }
+  function deleteBrand(key) {
+    BRANDS = BRANDS.filter(b => b.key !== key);
+    saveBrands();
   }
 
   /* ============================================================
@@ -162,7 +225,15 @@ window.APP_DATA = (function () {
       employees.splice(i, 1);
       // Unassign any tasks owned by this employee
       tasks.forEach(t => {
-        if (t.assignee === id) t.assignee = null;
+        if (t.assignee === id) {
+          // Promote first co-assignee to primary if any
+          if (Array.isArray(t.coAssignees) && t.coAssignees.length) {
+            t.assignee = t.coAssignees.shift();
+          } else {
+            t.assignee = null;
+          }
+        }
+        if (Array.isArray(t.coAssignees)) t.coAssignees = t.coAssignees.filter(x => x !== id);
         if (t.watchers) t.watchers = t.watchers.filter(w => w !== id);
       });
       saveTasks();
@@ -303,6 +374,27 @@ window.APP_DATA = (function () {
   }
   function findEmployee(id) { return employees.find(e => e.id === id) || null; }
 
+  /* ============================================================
+     MULTI-ASSIGNEE HELPERS
+     Tasks may be jointly owned: the canonical primary is `t.assignee`,
+     additional owners live on `t.coAssignees: []`. All helpers below
+     treat the union as the full set of assignees so task code that
+     was written for a single assignee keeps working.
+     ============================================================ */
+  function getAllAssignees(t) {
+    if (!t) return [];
+    const ids = [];
+    if (t.assignee) ids.push(t.assignee);
+    if (Array.isArray(t.coAssignees)) {
+      t.coAssignees.forEach(id => { if (id && !ids.includes(id)) ids.push(id); });
+    }
+    return ids;
+  }
+  function isAssignedTo(t, empId) {
+    if (!empId) return false;
+    return getAllAssignees(t).includes(empId);
+  }
+
   // Build a usable image URL for an employee.
   // Priority: 1) custom uploaded data URL  2) pravatar by number  3) gray fallback
   function avatarUrl(emp, size) {
@@ -359,9 +451,13 @@ window.APP_DATA = (function () {
     if (isManager()) return true;
     if (isSupervisor() && task) {
       const u = getCurrentUser();
-      const e = task.assignee ? findEmployee(task.assignee) : null;
-      // Supervisor can delete tasks unassigned or whose assignee is in their dept
-      return !task.assignee || (e && e.department === u.department);
+      const all = getAllAssignees(task);
+      if (!all.length) return true; // unassigned tasks
+      // Supervisor can delete if at least one assignee is in their department
+      return all.some(id => {
+        const e = findEmployee(id);
+        return e && e.department === u.department;
+      });
     }
     return false;
   }
@@ -371,10 +467,14 @@ window.APP_DATA = (function () {
     if (isManager()) return true;
     const u = getCurrentUser(); if (!u || !task) return false;
     if (u.permRole === 'supervisor') {
-      const e = task.assignee ? findEmployee(task.assignee) : null;
-      return !task.assignee || (e && e.department === u.department);
+      const all = getAllAssignees(task);
+      if (!all.length) return true;
+      return all.some(id => {
+        const e = findEmployee(id);
+        return e && e.department === u.department;
+      });
     }
-    if (u.permRole === 'employee') return task.assignee === u.id;
+    if (u.permRole === 'employee') return isAssignedTo(task, u.id);
     return false;
   }
 
@@ -392,10 +492,14 @@ window.APP_DATA = (function () {
     if (u.permRole === 'manager') return tasks.slice();
     if (u.permRole === 'supervisor') {
       const memberIds = new Set(getVisibleEmployees().map(e => e.id));
-      return tasks.filter(t => !t.assignee || memberIds.has(t.assignee));
+      return tasks.filter(t => {
+        const all = getAllAssignees(t);
+        if (!all.length) return true;
+        return all.some(id => memberIds.has(id));
+      });
     }
-    // Employee: tasks they own or are CC'd on
-    return tasks.filter(t => t.assignee === u.id || (t.watchers || []).includes(u.id));
+    // Employee: tasks they own/co-own or are CC'd on
+    return tasks.filter(t => isAssignedTo(t, u.id) || (t.watchers || []).includes(u.id));
   }
 
   // ============================================================
@@ -431,7 +535,7 @@ window.APP_DATA = (function () {
     let counts = { onTime: 0, early: 0, late: 0, overdue: 0 };
 
     tasks.forEach(t => {
-      if (t.assignee !== empId) return;
+      if (!isAssignedTo(t, empId)) return;
       const baseXP = (t.xp || 0);
 
       if (t.done) {
@@ -499,6 +603,16 @@ window.APP_DATA = (function () {
     avatarUrl,
     DEPARTMENTS,
     findDepartment,
+    addDepartment,
+    deleteDepartment,
+    saveDepartments,
+    getAllBrands,
+    findBrand,
+    addBrand,
+    updateBrand,
+    deleteBrand,
+    getAllAssignees,
+    isAssignedTo,
     getCurrentUser,
     setCurrentUser,
     tryLogin,

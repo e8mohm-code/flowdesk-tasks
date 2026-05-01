@@ -49,14 +49,24 @@ LAYOUT.render('tasks');
   function taskCardHTML(task, compact = false) {
     const overdue = isOverdue(task);
     const tagColor = D.getTagColor(task.tagKey);
+    const brandKeys = task.brandKeys || [];
+    const brandStrip = brandKeys.length ? `
+      <div class="task-brands">
+        ${brandKeys.map(k => {
+          const b = D.findBrand(k); if (!b) return '';
+          return `<span class="brand-chip sm" style="--brand-color:${b.color}">${escapeHtml(b.label)}</span>`;
+        }).join('')}
+      </div>` : '';
+    const primaryBrandColor = brandKeys.length ? (D.findBrand(brandKeys[0])?.color || '') : '';
     return `
-      <article class="task ${compact ? 'compact' : ''}" data-task="${task.id}" data-priority="${task.priority}" draggable="true" ${overdue ? 'data-overdue="true"' : ''}>
+      <article class="task ${compact ? 'compact' : ''}" data-task="${task.id}" data-priority="${task.priority}" draggable="true" ${overdue ? 'data-overdue="true"' : ''} ${primaryBrandColor ? `style="--task-brand:${primaryBrandColor}" data-has-brand="true"` : ''}>
         <div class="task-row">
           <span class="task-prio ${task.priority}"></span>
           <h4 class="task-title">${escapeHtml(task.title)}</h4>
           ${overdue ? '<span class="overdue-pill">متأخرة</span>' : '<span class="task-handle" aria-label="المزيد">⋮</span>'}
         </div>
         ${compact ? '' : `
+          ${brandStrip}
           <div class="task-foot">
             <span class="tag" style="--tag-color:${tagColor}">${escapeHtml(task.tag)}</span>
             <span class="due">
@@ -75,7 +85,7 @@ LAYOUT.render('tasks');
     const q = getFilter();
     const vt = visibleTasks();
     empGrid.innerHTML = employees.map(emp => {
-      const list = vt.filter(t => !t.done && t.assignee === emp.id && matchesFilter(t, q, emp));
+      const list = vt.filter(t => !t.done && D.isAssignedTo(t, emp.id) && matchesFilter(t, q, emp));
       const overdue = list.filter(isOverdue).length;
       const active  = list.length - overdue;
 
@@ -141,9 +151,9 @@ LAYOUT.render('tasks');
 
   function renderOverview() {
     const open = visibleTasks().filter(t => !t.done);
-    const max = Math.max(1, ...employees.map(e => open.filter(t => t.assignee === e.id).length));
+    const max = Math.max(1, ...employees.map(e => open.filter(t => D.isAssignedTo(t, e.id)).length));
     overviewList.innerHTML = employees.map(emp => {
-      const list = open.filter(t => t.assignee === emp.id);
+      const list = open.filter(t => D.isAssignedTo(t, emp.id));
       const overdue = list.filter(isOverdue).length;
       const pct = (list.length / max) * 100;
       const fill = overdue > 0

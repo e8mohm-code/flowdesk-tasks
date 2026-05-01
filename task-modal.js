@@ -26,8 +26,9 @@ window.TaskModal = (function () {
     return {
       title: '',
       desc: '',
-      assignee: null,
+      assignees: [],          // array — first one becomes primary on save
       watchers: [],
+      brandKeys: [],          // brand label keys
       due: due7.toISOString().slice(0,10),
       priority: 'low',
       tag: firstTag.label,
@@ -146,6 +147,7 @@ window.TaskModal = (function () {
             </div>
             <div class="xp-row-combined">
               <div class="xp-picker-row" id="tmXp">
+                <button type="button" class="xp-pill xp-zero" data-xp="0">بدون</button>
                 <button type="button" class="xp-pill" data-xp="10">+10</button>
                 <button type="button" class="xp-pill" data-xp="25">+25</button>
                 <button type="button" class="xp-pill" data-xp="50">+50</button>
@@ -169,6 +171,11 @@ window.TaskModal = (function () {
           <div class="tm-field">
             <label class="field-label">الفئة</label>
             <div class="tag-picker" id="tmTag"></div>
+          </div>
+
+          <div class="tm-field">
+            <label class="field-label">العلامات / البراندات <small class="muted">(اختياري — اختر أكثر من واحد)</small></label>
+            <div class="brand-picker" id="tmBrand"></div>
           </div>
 
           <!-- Recurring -->
@@ -279,27 +286,39 @@ window.TaskModal = (function () {
     const $ = sel => overlay.querySelector(sel);
     const $$ = sel => overlay.querySelectorAll(sel);
 
-    /* ---------- ASSIGNEE STRIP ---------- */
+    /* ---------- ASSIGNEE STRIP — multi-select ---------- */
     function renderAssignee() {
       const el = $('#tmAssignee');
       const visible = D.getVisibleEmployees();
+      const noneSel = !state.assignees.length;
       el.innerHTML = `
-        <button type="button" class="ass-chip ${state.assignee === null ? 'selected' : ''}" data-emp="" title="غير مسندة">
+        <button type="button" class="ass-chip ${noneSel ? 'selected' : ''}" data-emp="" title="غير مسندة">
           <span class="ov-av sm" style="background:var(--surface-soft);display:grid;place-items:center;color:var(--ink-3)">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0116 0v1"/></svg>
           </span>
           <span class="ass-name">غير مسندة</span>
         </button>
-        ${visible.map(emp => `
-          <button type="button" class="ass-chip ${state.assignee === emp.id ? 'selected' : ''}" data-emp="${emp.id}" style="--emp-color:${emp.color}" title="${esc(emp.name)}">
-            <span class="ov-av sm"><img src="${D.avatarUrl(emp, 40)}" alt=""/></span>
-            <span class="ass-name">${esc(emp.name.split(' ')[0])}</span>
-          </button>
-        `).join('')}
+        ${visible.map(emp => {
+          const sel = state.assignees.includes(emp.id);
+          return `
+            <button type="button" class="ass-chip ${sel ? 'selected' : ''}" data-emp="${emp.id}" style="--emp-color:${emp.color}" title="${esc(emp.name)}">
+              <span class="ov-av sm"><img src="${D.avatarUrl(emp, 40)}" alt=""/></span>
+              <span class="ass-name">${esc(emp.name.split(' ')[0])}</span>
+              ${sel ? '<span class="ass-tick">✓</span>' : ''}
+            </button>
+          `;
+        }).join('')}
       `;
       el.querySelectorAll('.ass-chip').forEach(b => {
         b.addEventListener('click', () => {
-          state.assignee = b.dataset.emp || null;
+          const id = b.dataset.emp;
+          if (!id) {
+            state.assignees = []; // none
+          } else {
+            const i = state.assignees.indexOf(id);
+            if (i >= 0) state.assignees.splice(i, 1);
+            else state.assignees.push(id);
+          }
           renderAssignee();
         });
       });
@@ -440,6 +459,81 @@ window.TaskModal = (function () {
       });
     }
 
+    /* ---------- BRAND LABELS ---------- */
+    function renderBrands() {
+      const el = $('#tmBrand');
+      const all = D.getAllBrands();
+      el.innerHTML = `
+        ${all.map(b => `
+          <span class="brand-wrap">
+            <button type="button" class="brand-pick ${state.brandKeys.includes(b.key) ? 'selected' : ''}" data-key="${b.key}" style="--brand-color:${b.color}">
+              <i class="bdot"></i>${esc(b.label)}
+            </button>
+            <button type="button" class="brand-del" data-del="${b.key}" aria-label="حذف" title="حذف">×</button>
+          </span>
+        `).join('')}
+        <span class="brand-add-wrap">
+          <button type="button" class="brand-add-btn" id="tmBrandAddBtn">+ علامة جديدة</button>
+          <span class="brand-add-form" id="tmBrandAddForm" hidden>
+            <input class="brand-add-input" id="tmBrandAddInput" placeholder="اسم البراند..." maxlength="24"/>
+            <input type="color" class="brand-add-color" id="tmBrandAddColor" value="#e25b62"/>
+            <button type="button" class="brand-add-save" id="tmBrandAddSave" aria-label="حفظ">
+              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l5 5 13-13"/></svg>
+            </button>
+            <button type="button" class="brand-add-cancel" id="tmBrandAddCancel" aria-label="إلغاء">
+              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
+          </span>
+        </span>
+      `;
+      // toggle pick
+      el.querySelectorAll('.brand-pick').forEach(b => b.addEventListener('click', () => {
+        const k = b.dataset.key;
+        const i = state.brandKeys.indexOf(k);
+        if (i >= 0) state.brandKeys.splice(i, 1);
+        else state.brandKeys.push(k);
+        renderBrands();
+      }));
+      // delete brand
+      el.querySelectorAll('.brand-del').forEach(b => b.addEventListener('click', e => {
+        e.stopPropagation();
+        const k = b.dataset.del;
+        const br = D.findBrand(k);
+        if (!br) return;
+        if (!confirm(`حذف العلامة "${br.label}"؟ ستُزال من كل المهام.`)) return;
+        D.deleteBrand(k);
+        state.brandKeys = state.brandKeys.filter(x => x !== k);
+        renderBrands();
+      }));
+      // add new
+      const addBtn = $('#tmBrandAddBtn');
+      const addForm = $('#tmBrandAddForm');
+      const addInp = $('#tmBrandAddInput');
+      const addColor = $('#tmBrandAddColor');
+      addBtn?.addEventListener('click', () => {
+        addBtn.hidden = true;
+        addForm.hidden = false;
+        addInp.focus();
+      });
+      $('#tmBrandAddCancel')?.addEventListener('click', () => {
+        addInp.value = '';
+        addBtn.hidden = false;
+        addForm.hidden = true;
+      });
+      const saveAdd = () => {
+        const label = (addInp.value || '').trim();
+        if (!label) { addInp.focus(); return; }
+        const b = D.addBrand(label, addColor.value);
+        if (b) state.brandKeys.push(b.key);
+        renderBrands();
+      };
+      $('#tmBrandAddSave')?.addEventListener('click', saveAdd);
+      addInp?.addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); saveAdd(); }
+        if (e.key === 'Escape') { e.preventDefault(); $('#tmBrandAddCancel').click(); }
+      });
+    }
+
     /* ---------- PRIORITY ---------- */
     function renderPrio() {
       $$('#tmPrio button').forEach(b => b.classList.toggle('active', b.dataset.prio === state.priority));
@@ -456,11 +550,13 @@ window.TaskModal = (function () {
 
     /* ---------- XP ---------- */
     function renderXp() {
-      const presets = [10, 25, 50, 100];
+      const presets = [0, 10, 25, 50, 100];
       const isPreset = presets.includes(state.xp);
       $$('#tmXp .xp-pill').forEach(b => b.classList.toggle('active', isPreset && +b.dataset.xp === state.xp));
       if (!isPreset) {
         $('#tmXpCustom').value = state.xp;
+      } else {
+        $('#tmXpCustom').value = '';
       }
     }
     $('#tmXp').addEventListener('click', e => {
@@ -726,6 +822,7 @@ window.TaskModal = (function () {
       renderAssignee();
       renderWatchers();
       renderTags();
+      renderBrands();
       renderPrio();
       renderXp();
       renderSubtasks();
@@ -753,12 +850,17 @@ window.TaskModal = (function () {
       return;
     }
 
+    const primary = state.assignees[0] || null;
+    const coAss = state.assignees.slice(1);
+
     const newTask = {
       id: 't-' + Date.now(),
       title,
       desc: state.desc || '',
-      assignee: state.assignee,
+      assignee: primary,
+      coAssignees: coAss,
       watchers: state.watchers.slice(),
+      brandKeys: state.brandKeys.slice(),
       due: state.due,
       tag: state.tag,
       tagKey: state.tagKey,

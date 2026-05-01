@@ -1,5 +1,5 @@
 /* =====================================================================
-   Task Detail Modal — show full task info, activity log, time remaining.
+   Task Detail Modal — fully editable inline.
    Usage: TaskDetailModal.open(taskId)
    ===================================================================== */
 
@@ -95,8 +95,11 @@ window.TaskDetailModal = (function () {
     const t = D.tasks.find(x => x.id === currentTaskId);
     if (!t) { close(); return; }
 
-    const overdue = D.isOverdue(t);
-    const e = D.findEmployee(t.assignee);
+    const canEdit = D.canEditTask(t);
+    const allAssigneeIds = D.getAllAssignees(t);
+    const allTags = D.getAllTags();
+    const allBrands = D.getAllBrands();
+    const visibleEmps = D.getVisibleEmployees();
 
     // Time status
     const todayISO = D.TODAY.toISOString().slice(0, 10);
@@ -125,48 +128,87 @@ window.TaskDetailModal = (function () {
       <div class="td-body">
         <div class="td-title-row">
           <span class="td-prio-strip" data-prio="${t.priority}"></span>
-          <h1 class="td-title">${esc(t.title)}</h1>
+          ${canEdit
+            ? `<input type="text" class="td-title-input" id="tdTitleInput" value="${esc(t.title)}" placeholder="عنوان المهمة"/>`
+            : `<h1 class="td-title">${esc(t.title)}</h1>`}
         </div>
 
         <div class="td-meta-grid">
+
           <div class="td-meta">
-            <span class="td-label">المسند إليه</span>
-            ${e ? `
-              <a class="td-assignee" href="employee.html?id=${e.id}" style="--emp-color:${e.color}">
-                <span class="ov-av sm"><img src="${D.avatarUrl(e, 40)}" alt=""/></span>
-                <span class="td-emp-text">
-                  <b>${esc(e.name)}</b>
-                  <small>${esc(e.role)}</small>
-                </span>
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l-6-6 6-6"/></svg>
-              </a>
-            ` : '<span class="muted">غير مسندة</span>'}
+            <span class="td-label">المسند إليه ${canEdit ? '<small class="muted">(يمكن أكثر من شخص)</small>' : ''}</span>
+            ${canEdit ? `
+              <div class="td-assignee-edit" id="tdAssigneeEdit">
+                ${visibleEmps.map(emp => {
+                  const sel = allAssigneeIds.includes(emp.id);
+                  return `
+                    <button type="button" class="ass-chip ${sel ? 'selected' : ''}" data-emp="${emp.id}" style="--emp-color:${emp.color}" title="${esc(emp.name)}">
+                      <span class="ov-av sm"><img src="${D.avatarUrl(emp, 40)}" alt=""/></span>
+                      <span class="ass-name">${esc(emp.name.split(' ')[0])}</span>
+                      ${sel ? '<span class="ass-tick">✓</span>' : ''}
+                    </button>
+                  `;
+                }).join('')}
+              </div>
+            ` : (allAssigneeIds.length ? `
+              <div class="td-assignees-stack">
+                ${allAssigneeIds.map(id => {
+                  const e = D.findEmployee(id); if (!e) return '';
+                  return `
+                    <a class="td-assignee" href="employee.html?id=${e.id}" style="--emp-color:${e.color}">
+                      <span class="ov-av sm"><img src="${D.avatarUrl(e, 40)}" alt=""/></span>
+                      <span class="td-emp-text">
+                        <b>${esc(e.name)}</b>
+                        <small>${esc(e.role)}</small>
+                      </span>
+                    </a>
+                  `;
+                }).join('')}
+              </div>
+            ` : '<span class="muted">غير مسندة</span>')}
           </div>
 
           <div class="td-meta">
             <span class="td-label">الموعد</span>
-            <div class="td-due-block ${timeClass}">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
-              <span>${esc(D.formatDue(t.due))}</span>
-            </div>
+            ${canEdit
+              ? `<input type="date" class="td-due-input field-input" id="tdDueInput" value="${esc(t.due)}"/>`
+              : `<div class="td-due-block ${timeClass}">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
+                  <span>${esc(D.formatDue(t.due))}</span>
+                </div>`}
           </div>
 
           <div class="td-meta">
             <span class="td-label">الفئة</span>
-            <span class="tag" style="--tag-color:${D.getTagColor(t.tagKey)}">${esc(t.tag)}</span>
+            ${canEdit ? `
+              <select class="td-tag-select field-input" id="tdTagSelect">
+                ${allTags.map(tg => `<option value="${tg.key}" ${t.tagKey === tg.key ? 'selected' : ''}>${esc(tg.label)}</option>`).join('')}
+              </select>
+            ` : `<span class="tag" style="--tag-color:${D.getTagColor(t.tagKey)}">${esc(t.tag)}</span>`}
           </div>
 
           <div class="td-meta">
             <span class="td-label">الأولوية</span>
-            <span class="td-prio-badge ${t.priority}">
+            ${canEdit ? `
+              <div class="prio-seg compact" id="tdPrioSeg">
+                <button type="button" data-prio="low" class="${t.priority === 'low' ? 'active' : ''}"><i class="dot prio-low"></i><span>منخفضة</span></button>
+                <button type="button" data-prio="medium" class="${t.priority === 'medium' ? 'active' : ''}"><i class="dot prio-mid"></i><span>متوسطة</span></button>
+                <button type="button" data-prio="high" class="${t.priority === 'high' ? 'active' : ''}"><i class="dot prio-high"></i><span>عالية</span></button>
+              </div>
+            ` : `<span class="td-prio-badge ${t.priority}">
               <i class="dot prio-${t.priority === 'high' ? 'high' : t.priority === 'medium' ? 'mid' : 'low'}"></i>
               ${PRIO_LABEL[t.priority] || ''}
-            </span>
+            </span>`}
           </div>
 
           <div class="td-meta">
             <span class="td-label">المكافأة</span>
-            <span class="td-xp-badge">+${t.xp || 0} XP</span>
+            ${canEdit ? `
+              <div class="td-xp-edit">
+                <input type="number" min="0" max="9999" id="tdXpInput" class="field-input" value="${t.xp || 0}"/>
+                <span class="muted">XP <small>(0 = بدون)</small></span>
+              </div>
+            ` : `<span class="td-xp-badge">${t.xp ? '+' + t.xp + ' XP' : 'بدون'}</span>`}
           </div>
 
           <div class="td-meta">
@@ -178,10 +220,36 @@ window.TaskDetailModal = (function () {
           </div>
         </div>
 
-        ${t.desc ? `
+        <section class="td-section">
+          <h3>الوصف</h3>
+          ${canEdit
+            ? `<textarea id="tdDescInput" class="field-textarea" rows="3" placeholder="تفاصيل، روابط، متطلبات...">${esc(t.desc || '')}</textarea>`
+            : (t.desc ? `<p class="td-desc">${esc(t.desc)}</p>` : '<p class="muted">لا وصف</p>')}
+        </section>
+
+        ${(allBrands.length || canEdit) ? `
           <section class="td-section">
-            <h3>الوصف</h3>
-            <p class="td-desc">${esc(t.desc)}</p>
+            <h3>العلامات / البراندات</h3>
+            ${canEdit ? `
+              <div class="brand-picker" id="tdBrandPicker">
+                ${allBrands.map(b => {
+                  const sel = (t.brandKeys || []).includes(b.key);
+                  return `
+                    <button type="button" class="brand-pick ${sel ? 'selected' : ''}" data-key="${b.key}" style="--brand-color:${b.color}">
+                      <i class="bdot"></i>${esc(b.label)}
+                    </button>
+                  `;
+                }).join('')}
+                ${allBrands.length === 0 ? '<span class="muted">لا توجد علامات بعد — أضفها من نافذة إنشاء مهمة جديدة</span>' : ''}
+              </div>
+            ` : `
+              <div class="td-brand-chips">
+                ${(t.brandKeys || []).map(k => {
+                  const b = D.findBrand(k); if (!b) return '';
+                  return `<span class="brand-chip" style="--brand-color:${b.color}">${esc(b.label)}</span>`;
+                }).join('') || '<span class="muted">—</span>'}
+              </div>
+            `}
           </section>
         ` : ''}
 
@@ -261,12 +329,13 @@ window.TaskDetailModal = (function () {
             حذف
           </button>
         ` : ''}
-        ${!t.done && D.canEditTask(t) ? `
+        ${!t.done && canEdit ? `
           <div class="td-progress-quick">
             <button type="button" class="td-prog-btn" data-prog="25">25%</button>
             <button type="button" class="td-prog-btn" data-prog="50">50%</button>
             <button type="button" class="td-prog-btn" data-prog="75">75%</button>
           </div>
+          ${canEdit ? '<button type="button" class="td-btn save" id="tdSaveBtn"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l5 5 13-13"/></svg> حفظ التعديلات</button>' : ''}
           <button type="button" class="td-btn primary" id="tdCompleteBtn">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l5 5 13-13"/></svg>
             إكمال المهمة
@@ -286,7 +355,17 @@ window.TaskDetailModal = (function () {
     });
 
     modal.querySelector('#tdCompleteBtn')?.addEventListener('click', () => {
+      // Save any pending edits first
+      if (canEdit) gatherAndSaveEdits();
       D.updateTask(currentTaskId, { done: true, progress: 100 });
+      render();
+      refresh();
+    });
+
+    modal.querySelector('#tdSaveBtn')?.addEventListener('click', () => {
+      gatherAndSaveEdits();
+      const t = document.getElementById('toast');
+      if (t) { t.textContent = 'تم حفظ التعديلات'; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 1500); }
       render();
       refresh();
     });
@@ -310,12 +389,72 @@ window.TaskDetailModal = (function () {
       });
     });
 
+    // Live state for edits (collected on save)
+    let editAssignees = allAssigneeIds.slice();
+    let editPriority = t.priority;
+    let editBrands = (t.brandKeys || []).slice();
+
+    // Assignee chip toggling
+    modal.querySelectorAll('#tdAssigneeEdit .ass-chip').forEach(b => {
+      b.addEventListener('click', () => {
+        const id = b.dataset.emp;
+        const i = editAssignees.indexOf(id);
+        if (i >= 0) editAssignees.splice(i, 1);
+        else editAssignees.push(id);
+        b.classList.toggle('selected');
+        const tick = b.querySelector('.ass-tick');
+        if (tick) tick.remove();
+        else b.insertAdjacentHTML('beforeend', '<span class="ass-tick">✓</span>');
+      });
+    });
+
+    // Priority segment
+    modal.querySelector('#tdPrioSeg')?.addEventListener('click', e => {
+      const b = e.target.closest('button'); if (!b) return;
+      editPriority = b.dataset.prio;
+      modal.querySelectorAll('#tdPrioSeg button').forEach(x => x.classList.toggle('active', x === b));
+    });
+
+    // Brand toggle
+    modal.querySelectorAll('#tdBrandPicker .brand-pick').forEach(b => {
+      b.addEventListener('click', () => {
+        const k = b.dataset.key;
+        const i = editBrands.indexOf(k);
+        if (i >= 0) editBrands.splice(i, 1);
+        else editBrands.push(k);
+        b.classList.toggle('selected');
+      });
+    });
+
+    function gatherAndSaveEdits() {
+      const titleEl = modal.querySelector('#tdTitleInput');
+      const descEl = modal.querySelector('#tdDescInput');
+      const dueEl = modal.querySelector('#tdDueInput');
+      const tagEl = modal.querySelector('#tdTagSelect');
+      const xpEl = modal.querySelector('#tdXpInput');
+      const patch = {};
+      if (titleEl) patch.title = (titleEl.value || '').trim() || t.title;
+      if (descEl) patch.desc = descEl.value || '';
+      if (dueEl && dueEl.value) patch.due = dueEl.value;
+      if (xpEl) patch.xp = Math.max(0, parseInt(xpEl.value, 10) || 0);
+      if (tagEl) {
+        const tagObj = D.findTag(tagEl.value);
+        if (tagObj) { patch.tagKey = tagObj.key; patch.tag = tagObj.label; }
+      }
+      patch.priority = editPriority;
+      patch.assignee = editAssignees[0] || null;
+      patch.coAssignees = editAssignees.slice(1);
+      patch.brandKeys = editBrands.slice();
+      D.updateTask(currentTaskId, patch);
+    }
+
     const cmtInp = modal.querySelector('#tdCommentInput');
     const cmtBtn = modal.querySelector('#tdCommentSend');
     const sendCmt = () => {
       const text = (cmtInp.value || '').trim();
       if (!text) return;
-      D.addComment(currentTaskId, text, 'e1'); // demo: comment as emp e1
+      const u = D.getCurrentUser();
+      D.addComment(currentTaskId, text, u ? u.id : 'u1');
       cmtInp.value = '';
       render();
     };

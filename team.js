@@ -47,7 +47,7 @@ LAYOUT.render('team');
   function renderTeam() {
     const list = employees.filter(matchEmp);
     teamGrid.innerHTML = list.map(emp => {
-      const empTasks = tasks.filter(t => t.assignee === emp.id);
+      const empTasks = tasks.filter(t => D.isAssignedTo(t, emp.id));
       const open = empTasks.filter(t => !t.done);
       const overdue = open.filter(isOverdue).length;
       const done = empTasks.filter(t => t.done).length;
@@ -189,7 +189,7 @@ LAYOUT.render('team');
   function renderLeaders() {
     const weekAgo = new Date(D.TODAY); weekAgo.setDate(weekAgo.getDate() - 7);
     const leaderboardData = employees.map(emp => {
-      const completed = tasks.filter(t => t.done && t.assignee === emp.id && t.doneAt && new Date(t.doneAt + 'T00:00:00') >= weekAgo).length;
+      const completed = tasks.filter(t => t.done && D.isAssignedTo(t, emp.id) && t.doneAt && new Date(t.doneAt + 'T00:00:00') >= weekAgo).length;
       return { emp, completed };
     }).sort((a,b) => b.completed - a.completed);
 

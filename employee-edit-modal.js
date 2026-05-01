@@ -155,11 +155,20 @@ window.EmployeeEditModal = (function () {
           </div>
           <div class="tm-field">
             <label class="field-label" for="eeDepartment">القسم</label>
-            <select id="eeDepartment" class="field-input">
-              ${D.DEPARTMENTS.map(d => `
-                <option value="${d.key}" ${form.department === d.key ? 'selected' : ''}>${esc(d.label)}</option>
-              `).join('')}
-            </select>
+            <div class="dept-row">
+              <select id="eeDepartment" class="field-input">
+                ${D.DEPARTMENTS.map(d => `
+                  <option value="${d.key}" ${form.department === d.key ? 'selected' : ''}>${esc(d.label)}</option>
+                `).join('')}
+              </select>
+              <button type="button" class="ghost-btn dept-add-btn" id="eeDeptAddBtn" title="قسم جديد">+ جديد</button>
+            </div>
+            <div class="dept-add-form" id="eeDeptAddForm" hidden>
+              <input type="text" id="eeDeptAddInput" class="field-input" placeholder="اسم القسم الجديد..." maxlength="30"/>
+              <input type="color" id="eeDeptAddColor" value="#4f7af0" title="اللون"/>
+              <button type="button" class="ghost-btn" id="eeDeptAddSave">حفظ</button>
+              <button type="button" class="ghost-btn" id="eeDeptAddCancel">إلغاء</button>
+            </div>
           </div>
         </div>
 
@@ -306,6 +315,38 @@ window.EmployeeEditModal = (function () {
     // Active summary
     $('#eeActive').addEventListener('change', e => {
       $('#eeActiveSummary').textContent = e.target.checked ? '✓ يستطيع تسجيل الدخول' : '✗ معطّل — لا يستطيع الدخول';
+    });
+
+    // Department: add custom
+    const deptForm = $('#eeDeptAddForm');
+    const deptInput = $('#eeDeptAddInput');
+    const deptColor = $('#eeDeptAddColor');
+    const deptSelect = $('#eeDepartment');
+    $('#eeDeptAddBtn').addEventListener('click', () => {
+      deptForm.hidden = false;
+      deptInput.focus();
+    });
+    $('#eeDeptAddCancel').addEventListener('click', () => {
+      deptInput.value = '';
+      deptForm.hidden = true;
+    });
+    $('#eeDeptAddSave').addEventListener('click', () => {
+      const label = (deptInput.value || '').trim();
+      if (!label) { deptInput.focus(); return; }
+      const d = D.addDepartment(label, deptColor.value);
+      if (!d) return;
+      // Append new option and select it
+      const opt = document.createElement('option');
+      opt.value = d.key;
+      opt.textContent = d.label;
+      opt.selected = true;
+      deptSelect.appendChild(opt);
+      deptInput.value = '';
+      deptForm.hidden = true;
+    });
+    deptInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); $('#eeDeptAddSave').click(); }
+      if (e.key === 'Escape') { e.preventDefault(); $('#eeDeptAddCancel').click(); }
     });
 
     // Close
