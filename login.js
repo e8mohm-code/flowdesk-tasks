@@ -36,14 +36,17 @@
   // Submit handler
   form.addEventListener('submit', e => {
     e.preventDefault();
-    const emp = D.tryLogin(idInput.value, pwInput.value);
-    if (!emp) {
+    const result = D.tryLogin(idInput.value, pwInput.value);
+    if (!result || result.error) {
+      errBox.textContent = result && result.error === 'inactive'
+        ? 'هذا الحساب معطّل. تواصل مع المدير لتفعيله.'
+        : 'رقم المستخدم أو كلمة المرور غير صحيحة';
       errBox.hidden = false;
       pwInput.select();
       return;
     }
-    // Redirect based on role
-    if (emp.permRole === 'employee') location.href = 'my-tasks.html';
+    // result is the employee object
+    if (result.permRole === 'employee') location.href = 'my-tasks.html';
     else location.href = 'index.html';
   });
 

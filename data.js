@@ -15,6 +15,7 @@ window.APP_DATA = (function () {
   const LS_KEY = 'flowdesk-tasks-v7';
   const TAGS_LS_KEY = 'flowdesk-tags-v1';
   const USER_LS_KEY = 'flowdesk-current-user-v2';
+  const EMPS_LS_KEY = 'flowdesk-employees-v1';
   const XP_BY_PRIORITY = { high: 50, medium: 25, low: 10 };
 
   /* ============================================================
@@ -89,24 +90,95 @@ window.APP_DATA = (function () {
     saveTags();
   }
 
-  // Demo accounts — manager / supervisor / employee
-  // Login = numeric loginId + password (defined here for demo; replace with real auth in production)
-  const employees = [
+  // Seed employees (manager / supervisor / employee) — used on first load.
+  // After that, employees are persisted in localStorage so changes survive.
+  const SEED_EMPLOYEES = [
     { id: 'u1', loginId: '151215', password: '1111',
       name: 'المدير', role: 'مدير عام', avatar: 47, color: '#4f7af0',
-      email: 'manager@flowdesk.io', level: 'Sr.', joined: '2024-01-01',
-      department: 'product', permRole: 'manager' },
+      email: 'manager@flowdesk.io', phone: '',
+      level: 'Sr.', joined: '2024-01-01',
+      department: 'product', permRole: 'manager', active: true },
 
     { id: 'u2', loginId: '152525', password: '2525',
       name: 'المشرف', role: 'مشرف فريق الهندسة', avatar: 12, color: '#7c5cf0',
-      email: 'supervisor@flowdesk.io', level: 'Sr.', joined: '2024-06-01',
-      department: 'engineering', permRole: 'supervisor' },
+      email: 'supervisor@flowdesk.io', phone: '',
+      level: 'Sr.', joined: '2024-06-01',
+      department: 'engineering', permRole: 'supervisor', active: true },
 
     { id: 'u3', loginId: '153030', password: '3030',
       name: 'الموظف', role: 'موظف', avatar: 25, color: '#2bb673',
-      email: 'employee@flowdesk.io', level: 'Mid', joined: '2025-01-01',
-      department: 'engineering', permRole: 'employee' },
+      email: 'employee@flowdesk.io', phone: '',
+      level: 'Mid', joined: '2025-01-01',
+      department: 'engineering', permRole: 'employee', active: true },
   ];
+
+  // Hydrate from localStorage if present
+  let employees;
+  try {
+    const stored = localStorage.getItem(EMPS_LS_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed) && parsed.length) {
+        // Backfill any missing newer fields
+        employees = parsed.map(e => ({ phone: '', active: true, ...e }));
+      }
+    }
+  } catch (_) {}
+  if (!employees) employees = SEED_EMPLOYEES.map(e => ({ ...e }));
+
+  function saveEmployees() {
+    try { localStorage.setItem(EMPS_LS_KEY, JSON.stringify(employees)); } catch (_) {}
+  }
+  function nextEmployeeId() {
+    let max = 0;
+    employees.forEach(e => {
+      const m = /^u(\d+)$/.exec(e.id || '');
+      if (m) max = Math.max(max, parseInt(m[1], 10));
+    });
+    return 'u' + (max + 1);
+  }
+  function addEmployee(payload) {
+    const emp = {
+      id: nextEmployeeId(),
+      loginId: '', password: '',
+      name: '', role: '', avatar: 1, color: '#94a3b8',
+      email: '', phone: '',
+      level: 'Mid', joined: new Date().toISOString().slice(0,10),
+      department: 'engineering', permRole: 'employee', active: true,
+      ...payload,
+    };
+    employees.push(emp);
+    saveEmployees();
+    return emp;
+  }
+  function updateEmployee(id, patch) {
+    const e = employees.find(x => x.id === id);
+    if (e) { Object.assign(e, patch); saveEmployees(); }
+    return e;
+  }
+  function deleteEmployee(id) {
+    const i = employees.findIndex(x => x.id === id);
+    if (i >= 0) {
+      employees.splice(i, 1);
+      // Unassign any tasks owned by this employee
+      tasks.forEach(t => {
+        if (t.assignee === id) t.assignee = null;
+        if (t.watchers) t.watchers = t.watchers.filter(w => w !== id);
+      });
+      saveTasks();
+      saveEmployees();
+    }
+  }
+  function toggleEmployeeActive(id) {
+    const e = employees.find(x => x.id === id);
+    if (!e) return;
+    e.active = !e.active;
+    saveEmployees();
+    return e;
+  }
+  function loginIdExists(loginId, exceptId) {
+    return employees.some(e => e.loginId === String(loginId).trim() && e.id !== exceptId);
+  }
 
   // Empty by default — user creates tasks via the "+ مهمة جديدة" modal
   let tasks = [];
@@ -254,12 +326,13 @@ window.APP_DATA = (function () {
   }
 
   // Authenticate by numeric loginId + password.
-  // Returns the employee object on success, or null on failure.
+  // Returns the employee object on success, or { error } on failure.
   function tryLogin(loginId, password) {
     const id = String(loginId || '').trim();
     const pw = String(password || '').trim();
     const emp = employees.find(e => e.loginId === id && e.password === pw);
-    if (!emp) return null;
+    if (!emp) return { error: 'invalid' };
+    if (emp.active === false) return { error: 'inactive' };
     setCurrentUser(emp.id);
     return emp;
   }
@@ -418,6 +491,12 @@ window.APP_DATA = (function () {
     setCurrentUser,
     tryLogin,
     logout,
+    addEmployee,
+    updateEmployee,
+    deleteEmployee,
+    toggleEmployeeActive,
+    saveEmployees,
+    loginIdExists,
     isManager,
     isSupervisor,
     isEmployee,

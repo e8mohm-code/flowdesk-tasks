@@ -58,8 +58,14 @@ LAYOUT.render('team');
       const xpToNext = (level * 250) - xp;
       const levelProgressPct = ((xp % 250) / 250) * 100;
 
+      const isManager = D.isManager();
+      const dept = D.findDepartment(emp.department);
+      const inactive = emp.active === false;
+      const PERM_LABEL = { manager: '👑 مدير', supervisor: '🛡️ مشرف', employee: '👤 موظف' };
+      const waUrl = emp.phone ? `https://wa.me/${emp.phone.replace(/\D/g, '')}` : null;
+
       return `
-        <article class="team-card" style="--emp-color:${emp.color}" data-emp-link="${emp.id}">
+        <article class="team-card ${inactive ? 'inactive' : ''}" style="--emp-color:${emp.color}" data-emp-link="${emp.id}">
           <header class="team-card-head">
             <a href="employee.html?id=${emp.id}" class="emp-avatar lg" aria-label="عرض ${escapeHtml(emp.name)}">
               <img src="https://i.pravatar.cc/120?img=${emp.avatar}" alt=""/>
@@ -68,9 +74,31 @@ LAYOUT.render('team');
             <div class="emp-info">
               <h3 class="emp-name"><a href="employee.html?id=${emp.id}">${escapeHtml(emp.name)}</a></h3>
               <span class="emp-role">${escapeHtml(emp.role)} • ${escapeHtml(emp.level)}</span>
+              <div class="emp-tags">
+                <span class="emp-perm-pill ${emp.permRole}">${PERM_LABEL[emp.permRole] || ''}</span>
+                <span class="emp-dept-pill" style="--dept-color:${dept.color}">${escapeHtml(dept.label)}</span>
+                ${inactive ? '<span class="emp-inactive-pill">معطّل</span>' : ''}
+              </div>
               <a class="emp-mail" href="mailto:${emp.email}">${escapeHtml(emp.email)}</a>
+              ${emp.phone ? `<a class="emp-phone" href="${waUrl}" target="_blank" rel="noopener">📱 ${escapeHtml(emp.phone)}</a>` : '<span class="emp-phone muted">📱 بدون رقم</span>'}
             </div>
-            <span class="status-dot online" title="متصل"></span>
+            ${isManager ? `
+              <div class="emp-admin-actions">
+                <button type="button" class="emp-action edit" data-edit="${emp.id}" aria-label="تعديل" title="تعديل">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.1 2.1 0 113 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </button>
+                <button type="button" class="emp-action toggle ${inactive ? 'off' : 'on'}" data-toggle="${emp.id}" aria-label="${inactive ? 'تفعيل' : 'تعطيل'}" title="${inactive ? 'تفعيل الحساب' : 'تعطيل الحساب'}">
+                  ${inactive
+                    ? '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>'
+                    : '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M4.93 4.93l14.14 14.14"/></svg>'}
+                </button>
+                ${waUrl ? `
+                  <a href="${waUrl}" target="_blank" rel="noopener" class="emp-action whatsapp" aria-label="واتساب" title="واتساب">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M17.5 14.4c-.3-.1-1.7-.8-2-.9s-.5-.1-.7.1c-.2.3-.7.9-.9 1.1-.2.2-.3.2-.6.1-.3-.1-1.2-.4-2.3-1.4-.8-.7-1.4-1.6-1.6-1.9-.2-.3 0-.4.1-.6l.5-.6c.2-.2.2-.3.3-.5.1-.2 0-.4 0-.5-.1-.1-.7-1.6-.9-2.2-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.5s1.1 2.9 1.2 3.1c.1.2 2.1 3.2 5.2 4.5.7.3 1.3.5 1.7.6.7.2 1.4.2 1.9.1.6-.1 1.7-.7 2-1.4.2-.7.2-1.2.2-1.4-.1-.1-.3-.2-.6-.3zM12 2C6.5 2 2 6.5 2 12c0 1.7.5 3.4 1.3 4.8L2 22l5.3-1.4c1.4.7 3 1.1 4.7 1.1 5.5 0 10-4.5 10-10S17.5 2 12 2z"/></svg>
+                  </a>
+                ` : ''}
+              </div>
+            ` : ''}
           </header>
 
           <div class="team-stats">
@@ -127,6 +155,23 @@ LAYOUT.render('team');
         </article>
       `;
     }).join('') || `<div class="muted" style="padding:24px;text-align:center">لا يوجد أعضاء يطابقون البحث</div>`;
+
+    // Wire admin action buttons
+    teamGrid.querySelectorAll('[data-edit]').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (window.EmployeeEditModal) window.EmployeeEditModal.open(btn.dataset.edit);
+      });
+    });
+    teamGrid.querySelectorAll('[data-toggle]').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.preventDefault();
+        e.stopPropagation();
+        D.toggleEmployeeActive(btn.dataset.toggle);
+        renderAll();
+      });
+    });
   }
 
   function renderKpis() {
@@ -174,9 +219,24 @@ LAYOUT.render('team');
   }
 
   filterInput?.addEventListener('input', renderTeam);
-  renderAll();
-  // re-bind filterInput once layout injected (small race)
+
+  // Manager-only: wire the "+ إضافة عضو" round button
   setTimeout(() => {
+    document.querySelectorAll('.round-btn[aria-label="إضافة عضو"]').forEach(btn => {
+      if (D.isManager()) {
+        btn.style.display = '';
+        btn.addEventListener('click', () => {
+          if (window.EmployeeEditModal) window.EmployeeEditModal.open();
+        });
+      } else {
+        btn.style.display = 'none';
+      }
+    });
     document.getElementById('searchInput')?.addEventListener('input', renderTeam);
   }, 0);
+
+  // Allow modal to refresh team without full page reload
+  window.refreshTeam = renderAll;
+
+  renderAll();
 })();

@@ -1170,6 +1170,162 @@ body.dragging .delete-zone {
 
 .team-card-foot { display: flex; gap: 8px; }
 
+/* Inactive employee — grayed out card */
+.team-card.inactive {
+  opacity: 0.65;
+  filter: grayscale(0.4);
+}
+
+/* Role + dept pills under the name */
+.emp-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 4px; }
+.emp-perm-pill {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--surface-soft);
+  color: var(--ink-2);
+}
+.emp-perm-pill.manager    { background: rgba(245,158,11,0.12); color: #b45309; }
+.emp-perm-pill.supervisor { background: rgba(124,92,240,0.12); color: var(--violet); }
+.emp-perm-pill.employee   { background: rgba(43,182,115,0.12); color: var(--green); }
+.emp-dept-pill {
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--dept-color) 12%, transparent);
+  color: var(--dept-color);
+}
+.emp-inactive-pill {
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--red-soft);
+  color: var(--red);
+}
+
+.emp-phone {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #25D366;
+  text-decoration: none;
+  margin-top: 4px;
+  letter-spacing: 0.02em;
+}
+.emp-phone:hover { text-decoration: underline; }
+.emp-phone.muted { color: var(--ink-3); cursor: default; pointer-events: none; }
+
+/* Admin action buttons (top-end of card) */
+.emp-admin-actions {
+  position: absolute;
+  top: 12px;
+  inset-inline-start: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 5;
+}
+.emp-action {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--ink-2);
+  cursor: pointer;
+  text-decoration: none;
+  transition: all .15s var(--ease);
+  box-shadow: var(--shadow-sm);
+}
+.emp-action:hover { transform: scale(1.1); }
+.emp-action.edit:hover     { background: var(--accent); color: #fff; border-color: var(--accent); }
+.emp-action.toggle.on:hover  { background: var(--red); color: #fff; border-color: var(--red); }
+.emp-action.toggle.off { background: var(--red-soft); color: var(--red); border-color: rgba(226,91,98,0.30); }
+.emp-action.toggle.off:hover { background: var(--green); color: #fff; border-color: var(--green); }
+.emp-action.whatsapp { color: #25D366; }
+.emp-action.whatsapp:hover { background: #25D366; color: #fff; border-color: #25D366; }
+
+/* Employee edit modal extras */
+.ee-look-row {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 16px;
+  align-items: center;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px;
+}
+.ee-avatar-preview {
+  width: 80px; height: 80px;
+  flex: 0 0 80px;
+  border-radius: 50%;
+  padding: 3px;
+  background: var(--emp-color, var(--accent));
+  box-shadow: 0 8px 18px rgba(15,23,42,0.12);
+}
+.ee-avatar-preview img {
+  width: 100%; height: 100%;
+  border-radius: 50%; object-fit: cover;
+  border: 3px solid var(--surface);
+  display: block;
+}
+.ee-look-controls { display: flex; flex-direction: column; gap: 12px; }
+.ee-look-line { display: flex; flex-direction: column; gap: 6px; }
+.ee-avatar-picker {
+  display: grid;
+  grid-template-columns: 32px 1fr 32px;
+  gap: 6px;
+}
+.ee-avatar-btn {
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: all .15s var(--ease);
+}
+.ee-avatar-btn:hover { background: var(--ink); color: #fff; border-color: var(--ink); }
+
+.ee-color-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 5px;
+}
+.ee-color {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all .15s var(--ease);
+}
+.ee-color:hover { transform: scale(1.1); }
+.ee-color.selected {
+  border-color: var(--ink);
+  box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--ink);
+  transform: scale(1.05);
+}
+
+.ee-error {
+  background: var(--red-soft);
+  border: 1px solid rgba(226,91,98,0.20);
+  color: var(--red);
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 9px 14px;
+  border-radius: 10px;
+  margin-top: 4px;
+}
+
 /* Leaderboard */
 .leaderboard { display: flex; flex-direction: column; gap: 6px; }
 .leader-row {
