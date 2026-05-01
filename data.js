@@ -352,6 +352,48 @@ window.APP_DATA = (function () {
     saveTasks();
   }
 
+  // ============================================================
+  // EXTENSION REQUESTS — employee asks for a new due date,
+  // manager/supervisor approves or denies. Only one pending
+  // request lives on a task at a time.
+  // ============================================================
+  function requestExtension(taskId, empId, newDue, reason) {
+    const t = tasks.find(x => x.id === taskId);
+    if (!t || !newDue) return;
+    t.extensionRequest = {
+      by: empId,
+      newDue,
+      reason: (reason || '').trim() || null,
+      when: nowISO(),
+      status: 'pending',
+    };
+    pushActivity(t, { type: 'extension-requested', by: empId, newDue, reason: t.extensionRequest.reason });
+    saveTasks();
+  }
+  function approveExtension(taskId, byEmpId) {
+    const t = tasks.find(x => x.id === taskId);
+    if (!t || !t.extensionRequest || t.extensionRequest.status !== 'pending') return;
+    const oldDue = t.due;
+    const newDue = t.extensionRequest.newDue;
+    t.due = newDue;
+    t.extensionRequest = { ...t.extensionRequest, status: 'approved', decidedBy: byEmpId, decidedAt: nowISO() };
+    pushActivity(t, { type: 'extension-approved', by: byEmpId, from: oldDue, to: newDue });
+    saveTasks();
+  }
+  function denyExtension(taskId, byEmpId) {
+    const t = tasks.find(x => x.id === taskId);
+    if (!t || !t.extensionRequest || t.extensionRequest.status !== 'pending') return;
+    t.extensionRequest = { ...t.extensionRequest, status: 'denied', decidedBy: byEmpId, decidedAt: nowISO() };
+    pushActivity(t, { type: 'extension-denied', by: byEmpId });
+    saveTasks();
+  }
+  function clearExtensionRequest(taskId) {
+    const t = tasks.find(x => x.id === taskId);
+    if (!t) return;
+    t.extensionRequest = null;
+    saveTasks();
+  }
+
   // Activity feed for reports
   const activities = [
     { who: 'e1', what: 'أكملت', target: 'تحديث صفحة تسجيل الدخول',     when: '2026-04-22 14:32' },
@@ -459,6 +501,23 @@ window.APP_DATA = (function () {
       const all = getAllAssignees(task);
       if (!all.length) return true; // unassigned tasks
       // Supervisor can delete if at least one assignee is in their department
+      return all.some(id => {
+        const e = findEmployee(id);
+        return e && e.department === u.department;
+      });
+    }
+    return false;
+  }
+
+  // Full edit (title, due, priority, category, XP, brands, assignees) — only
+  // manager/supervisor. Employees can only update progress, comment, and
+  // request a time extension via canEditTask below.
+  function canManageTask(task) {
+    if (isManager()) return true;
+    const u = getCurrentUser(); if (!u || !task) return false;
+    if (u.permRole === 'supervisor') {
+      const all = getAllAssignees(task);
+      if (!all.length) return true;
       return all.some(id => {
         const e = findEmployee(id);
         return e && e.department === u.department;
@@ -634,6 +693,11 @@ window.APP_DATA = (function () {
     canCreateTasks,
     canDeleteTask,
     canEditTask,
+    canManageTask,
+    requestExtension,
+    approveExtension,
+    denyExtension,
+    clearExtensionRequest,
     getVisibleEmployees,
     getVisibleTasks,
     getEmployeeXP,

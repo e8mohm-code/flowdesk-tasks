@@ -5212,3 +5212,73 @@ body.modal-open { overflow: hidden; }
 .ph-task[data-has-brand="true"]::before {
   border-radius: 14px 0 0 14px;
 }
+
+/* ============================================================
+   Extension request banner + form (employee asks for new due date)
+   ============================================================ */
+.td-ext-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  margin: 12px 0;
+  font-size: 13px;
+}
+.td-ext-banner.pending {
+  background: color-mix(in srgb, var(--amber, #f0a042) 14%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--amber, #f0a042) 36%, var(--line));
+}
+.td-ext-banner.waiting {
+  background: var(--surface-2);
+  border: 1px dashed var(--line-2);
+  color: var(--ink-2);
+}
+.td-ext-icon { font-size: 18px; }
+.td-ext-text { flex: 1; display: flex; flex-direction: column; gap: 2px; line-height: 1.4; }
+.td-ext-text b { color: var(--ink); font-weight: 700; }
+.td-ext-text span { color: var(--ink-2); font-size: 12.5px; }
+.td-ext-approve, .td-ext-deny {
+  border: 0;
+  border-radius: 8px;
+  padding: 7px 14px;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform .15s var(--ease);
+}
+.td-ext-approve { background: var(--green); color: #fff; }
+.td-ext-approve:hover { transform: translateY(-1px); }
+.td-ext-deny {
+  background: transparent;
+  color: var(--red);
+  border: 1px solid color-mix(in srgb, var(--red) 38%, transparent);
+}
+.td-ext-deny:hover { background: var(--red-soft); }
+
+.td-ext-request-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  margin-top: 6px;
+  padding: 5px 12px;
+  background: transparent;
+  border: 1px dashed var(--accent);
+  color: var(--accent);
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.td-ext-request-btn:hover { background: var(--accent-soft, color-mix(in srgb, var(--accent) 12%, transparent)); }
+
+.td-ext-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 10px;
+  background: var(--surface-2);
+  border-radius: 10px;
+  border: 1px solid var(--line);
+}
+.td-ext-form input { font-size: 12.5px; padding: 6px 10px; }
+.td-ext-form .ghost-btn { font-size: 11.5px; padding: 6px 10px; align-self: flex-start; }

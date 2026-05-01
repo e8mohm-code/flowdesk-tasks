@@ -54,14 +54,17 @@ window.TaskDetailModal = (function () {
 
   function activityEntry(act, D) {
     const ICONS = {
-      created:     '🆕',
-      assigned:    '👤',
-      unassigned:  '↩️',
-      reassigned:  '🔄',
-      progress:    '📊',
-      completed:   '✅',
-      rescheduled: '📅',
-      comment:     '💬',
+      created:               '🆕',
+      assigned:              '👤',
+      unassigned:            '↩️',
+      reassigned:            '🔄',
+      progress:              '📊',
+      completed:             '✅',
+      rescheduled:           '📅',
+      comment:               '💬',
+      'extension-requested': '⏳',
+      'extension-approved':  '✅',
+      'extension-denied':    '⛔',
     };
     const icon = ICONS[act.type] || '•';
     let text = '';
@@ -78,6 +81,15 @@ window.TaskDetailModal = (function () {
       case 'completed':   text = '<b>أُكملت المهمة</b> 🎉'; break;
       case 'rescheduled': text = `الموعد: ${esc(act.from)} → <b>${esc(act.to)}</b>`; break;
       case 'comment':     text = `${empName(act.by)}: «${esc(act.text)}»`; break;
+      case 'extension-requested':
+        text = `${empName(act.by)} طلب تمديد إلى <b>${esc(act.newDue)}</b>${act.reason ? ` — «${esc(act.reason)}»` : ''}`;
+        break;
+      case 'extension-approved':
+        text = `${empName(act.by)} وافق على التمديد: ${esc(act.from)} → <b>${esc(act.to)}</b>`;
+        break;
+      case 'extension-denied':
+        text = `${empName(act.by)} رفض طلب التمديد`;
+        break;
       default:            text = act.type;
     }
     return `
@@ -95,7 +107,12 @@ window.TaskDetailModal = (function () {
     const t = D.tasks.find(x => x.id === currentTaskId);
     if (!t) { close(); return; }
 
-    const canEdit = D.canEditTask(t);
+    const canEdit = D.canEditTask(t);            // includes employees
+    const canFullyEdit = D.canManageTask(t);      // manager/supervisor only
+    const isEmployeeAssigned = canEdit && !canFullyEdit;
+    const u = D.getCurrentUser();
+    const extReq = t.extensionRequest;
+    const hasPendingExt = extReq && extReq.status === 'pending';
     const allAssigneeIds = D.getAllAssignees(t);
     const allTags = D.getAllTags();
     const allBrands = D.getAllBrands();
@@ -128,16 +145,37 @@ window.TaskDetailModal = (function () {
       <div class="td-body">
         <div class="td-title-row">
           <span class="td-prio-strip" data-prio="${t.priority}"></span>
-          ${canEdit
+          ${canFullyEdit
             ? `<input type="text" class="td-title-input" id="tdTitleInput" value="${esc(t.title)}" placeholder="عنوان المهمة"/>`
             : `<h1 class="td-title">${esc(t.title)}</h1>`}
         </div>
 
+        ${hasPendingExt && canFullyEdit ? `
+          <div class="td-ext-banner pending" id="tdExtBanner">
+            <span class="td-ext-icon">⏳</span>
+            <div class="td-ext-text">
+              <b>طلب تمديد من ${esc(D.findEmployee(extReq.by)?.name || 'موظف')}</b>
+              <span>إلى <b>${esc(D.formatDue(extReq.newDue))}</b>${extReq.reason ? ` — «${esc(extReq.reason)}»` : ''}</span>
+            </div>
+            <button type="button" class="td-ext-deny" id="tdExtDenyBtn">رفض</button>
+            <button type="button" class="td-ext-approve" id="tdExtApproveBtn">موافقة ✓</button>
+          </div>
+        ` : ''}
+        ${hasPendingExt && !canFullyEdit ? `
+          <div class="td-ext-banner waiting">
+            <span class="td-ext-icon">⏳</span>
+            <div class="td-ext-text">
+              <b>تم إرسال طلب التمديد</b>
+              <span>بانتظار موافقة المسؤول — التاريخ المطلوب: <b>${esc(D.formatDue(extReq.newDue))}</b></span>
+            </div>
+          </div>
+        ` : ''}
+
         <div class="td-meta-grid">
 
           <div class="td-meta">
-            <span class="td-label">المسند إليه ${canEdit ? '<small class="muted">(يمكن أكثر من شخص)</small>' : ''}</span>
-            ${canEdit ? `
+            <span class="td-label">المسند إليه ${canFullyEdit ? '<small class="muted">(يمكن أكثر من شخص)</small>' : ''}</span>
+            ${canFullyEdit ? `
               <div class="td-assignee-edit" id="tdAssigneeEdit">
                 ${visibleEmps.map(emp => {
                   const sel = allAssigneeIds.includes(emp.id);
@@ -170,17 +208,29 @@ window.TaskDetailModal = (function () {
 
           <div class="td-meta">
             <span class="td-label">الموعد</span>
-            ${canEdit
+            ${canFullyEdit
               ? `<input type="date" class="td-due-input field-input" id="tdDueInput" value="${esc(t.due)}"/>`
               : `<div class="td-due-block ${timeClass}">
                   <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
                   <span>${esc(D.formatDue(t.due))}</span>
                 </div>`}
+            ${isEmployeeAssigned && !t.done && !hasPendingExt ? `
+              <button type="button" class="td-ext-request-btn" id="tdExtRequestBtn">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                طلب تمديد
+              </button>
+              <div class="td-ext-form" id="tdExtForm" hidden>
+                <input type="date" id="tdExtDate" class="field-input" min="${esc(todayISO)}" value="${esc(t.due)}"/>
+                <input type="text" id="tdExtReason" class="field-input" placeholder="السبب (اختياري)"/>
+                <button type="button" class="ghost-btn" id="tdExtSendBtn">إرسال</button>
+                <button type="button" class="ghost-btn" id="tdExtCancelBtn">إلغاء</button>
+              </div>
+            ` : ''}
           </div>
 
           <div class="td-meta">
             <span class="td-label">الفئة</span>
-            ${canEdit ? `
+            ${canFullyEdit ? `
               <select class="td-tag-select field-input" id="tdTagSelect">
                 ${allTags.map(tg => `<option value="${tg.key}" ${t.tagKey === tg.key ? 'selected' : ''}>${esc(tg.label)}</option>`).join('')}
               </select>
@@ -189,7 +239,7 @@ window.TaskDetailModal = (function () {
 
           <div class="td-meta">
             <span class="td-label">الأولوية</span>
-            ${canEdit ? `
+            ${canFullyEdit ? `
               <div class="prio-seg compact" id="tdPrioSeg">
                 <button type="button" data-prio="low" class="${t.priority === 'low' ? 'active' : ''}"><i class="dot prio-low"></i><span>منخفضة</span></button>
                 <button type="button" data-prio="medium" class="${t.priority === 'medium' ? 'active' : ''}"><i class="dot prio-mid"></i><span>متوسطة</span></button>
@@ -203,7 +253,7 @@ window.TaskDetailModal = (function () {
 
           <div class="td-meta">
             <span class="td-label">المكافأة</span>
-            ${canEdit ? `
+            ${canFullyEdit ? `
               <div class="td-xp-edit">
                 <input type="number" min="0" max="9999" id="tdXpInput" class="field-input" value="${t.xp || 0}"/>
                 <span class="muted">XP <small>(0 = بدون)</small></span>
@@ -222,15 +272,15 @@ window.TaskDetailModal = (function () {
 
         <section class="td-section">
           <h3>الوصف</h3>
-          ${canEdit
+          ${canFullyEdit
             ? `<textarea id="tdDescInput" class="field-textarea" rows="3" placeholder="تفاصيل، روابط، متطلبات...">${esc(t.desc || '')}</textarea>`
             : (t.desc ? `<p class="td-desc">${esc(t.desc)}</p>` : '<p class="muted">لا وصف</p>')}
         </section>
 
-        ${(allBrands.length || canEdit) ? `
+        ${(allBrands.length || canFullyEdit) ? `
           <section class="td-section">
             <h3>العلامات / البراندات</h3>
-            ${canEdit ? `
+            ${canFullyEdit ? `
               <div class="brand-picker" id="tdBrandPicker">
                 ${allBrands.map(b => {
                   const sel = (t.brandKeys || []).includes(b.key);
@@ -337,7 +387,7 @@ window.TaskDetailModal = (function () {
             <button type="button" class="td-prog-btn" data-prog="50">50%</button>
             <button type="button" class="td-prog-btn" data-prog="75">75%</button>
           </div>
-          ${canEdit ? '<button type="button" class="td-btn save" id="tdSaveBtn"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l5 5 13-13"/></svg> حفظ التعديلات</button>' : ''}
+          ${canFullyEdit ? '<button type="button" class="td-btn save" id="tdSaveBtn"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l5 5 13-13"/></svg> حفظ التعديلات</button>' : ''}
           <button type="button" class="td-btn primary" id="tdCompleteBtn">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l5 5 13-13"/></svg>
             إكمال المهمة
@@ -357,14 +407,49 @@ window.TaskDetailModal = (function () {
     });
 
     modal.querySelector('#tdCompleteBtn')?.addEventListener('click', () => {
-      // Save any pending edits first
-      if (canEdit) gatherAndSaveEdits();
+      // Save any pending edits first (manager/supervisor only)
+      if (canFullyEdit) gatherAndSaveEdits();
       D.updateTask(currentTaskId, { done: true, progress: 100 });
       render();
       refresh();
     });
 
+    /* ---------- EXTENSION REQUEST flow ---------- */
+    modal.querySelector('#tdExtRequestBtn')?.addEventListener('click', () => {
+      modal.querySelector('#tdExtRequestBtn').hidden = true;
+      modal.querySelector('#tdExtForm').hidden = false;
+      modal.querySelector('#tdExtDate')?.focus();
+    });
+    modal.querySelector('#tdExtCancelBtn')?.addEventListener('click', () => {
+      modal.querySelector('#tdExtForm').hidden = true;
+      modal.querySelector('#tdExtRequestBtn').hidden = false;
+    });
+    modal.querySelector('#tdExtSendBtn')?.addEventListener('click', () => {
+      const newDue = modal.querySelector('#tdExtDate').value;
+      const reason = modal.querySelector('#tdExtReason').value || '';
+      if (!newDue) { alert('اختر تاريخاً للتمديد'); return; }
+      if (!u) return;
+      D.requestExtension(currentTaskId, u.id, newDue, reason);
+      const toast = document.getElementById('toast');
+      if (toast) { toast.textContent = 'تم إرسال طلب التمديد'; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 1700); }
+      render();
+      refresh();
+    });
+    modal.querySelector('#tdExtApproveBtn')?.addEventListener('click', () => {
+      if (!u) return;
+      D.approveExtension(currentTaskId, u.id);
+      render();
+      refresh();
+    });
+    modal.querySelector('#tdExtDenyBtn')?.addEventListener('click', () => {
+      if (!u) return;
+      D.denyExtension(currentTaskId, u.id);
+      render();
+      refresh();
+    });
+
     modal.querySelector('#tdSaveBtn')?.addEventListener('click', () => {
+      if (!canFullyEdit) return;
       gatherAndSaveEdits();
       const t = document.getElementById('toast');
       if (t) { t.textContent = 'تم حفظ التعديلات'; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 1500); }
