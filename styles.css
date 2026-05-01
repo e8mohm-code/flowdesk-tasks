@@ -5155,3 +5155,12 @@ body.modal-open { overflow: hidden; }
   display: block;
 }
 .brand-logo-empty { font-size: 14px; opacity: .55; }
+
+/* Compact task cards (employee columns) — tighter brand strip */
+.task.compact .task-brands {
+  margin: 4px 0 0;
+}
+.task.compact .brand-chip {
+  font-size: 9.5px;
+  padding: 1.5px 6px;
+}

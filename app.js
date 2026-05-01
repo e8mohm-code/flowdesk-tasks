@@ -66,8 +66,8 @@ LAYOUT.render('tasks');
           <h4 class="task-title">${escapeHtml(task.title)}</h4>
           ${overdue ? '<span class="overdue-pill">متأخرة</span>' : '<span class="task-handle" aria-label="المزيد">⋮</span>'}
         </div>
+        ${brandStrip}
         ${compact ? '' : `
-          ${brandStrip}
           <div class="task-foot">
             <span class="tag" style="--tag-color:${tagColor}">${escapeHtml(task.tag)}</span>
             <span class="due">
