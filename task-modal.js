@@ -18,6 +18,7 @@ window.TaskModal = (function () {
 
   let mounted = false;
   let state = null;
+  let pendingBrandLogo = null;  // persists across renderBrands re-renders
 
   function defaultState(D) {
     const due7 = new Date(D.TODAY); due7.setDate(due7.getDate() + 7);
@@ -516,7 +517,11 @@ window.TaskModal = (function () {
       const addColor = $('#tmBrandAddColor');
       const logoPrev = $('#tmBrandLogoPrev');
       const logoFile = $('#tmBrandLogoFile');
-      let pendingLogo = null; // data URL, captured between selecting file and clicking save
+
+      // If a previously-uploaded logo exists (form re-render), restore preview
+      if (pendingBrandLogo) {
+        logoPrev.innerHTML = `<img src="${pendingBrandLogo}" alt=""/>`;
+      }
 
       addBtn?.addEventListener('click', () => {
         addBtn.hidden = true;
@@ -525,7 +530,7 @@ window.TaskModal = (function () {
       });
       $('#tmBrandAddCancel')?.addEventListener('click', () => {
         addInp.value = '';
-        pendingLogo = null;
+        pendingBrandLogo = null;
         logoPrev.innerHTML = '<span class="brand-logo-empty">📷</span>';
         addBtn.hidden = false;
         addForm.hidden = true;
@@ -536,21 +541,32 @@ window.TaskModal = (function () {
         const f = e.target.files && e.target.files[0];
         if (!f) return;
         if (!f.type.startsWith('image/')) { alert('يجب اختيار صورة'); return; }
+
         const reader = new FileReader();
+        reader.onerror = () => alert('فشل قراءة الملف');
         reader.onload = ev => {
           const img = new Image();
+          img.onerror = () => {
+            // Fallback: store original data URL even if Image() can't decode
+            pendingBrandLogo = ev.target.result;
+            logoPrev.innerHTML = `<img src="${pendingBrandLogo}" alt=""/>`;
+          };
           img.onload = () => {
-            // Resize to max 80x80 — small logos for chip display
-            const MAX = 80;
-            let w = img.width, h = img.height;
-            if (w > h) { if (w > MAX) { h = h * MAX / w; w = MAX; } }
-            else      { if (h > MAX) { w = w * MAX / h; h = MAX; } }
-            const canvas = document.createElement('canvas');
-            canvas.width = w; canvas.height = h;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, w, h);
-            pendingLogo = canvas.toDataURL('image/png');
-            logoPrev.innerHTML = `<img src="${pendingLogo}" alt=""/>`;
+            try {
+              // Resize to max 96x96 for crisp small chip display
+              const MAX = 96;
+              let w = img.width, h = img.height;
+              if (w > h) { if (w > MAX) { h = h * MAX / w; w = MAX; } }
+              else      { if (h > MAX) { w = w * MAX / h; h = MAX; } }
+              const canvas = document.createElement('canvas');
+              canvas.width = w; canvas.height = h;
+              const ctx = canvas.getContext('2d');
+              ctx.drawImage(img, 0, 0, w, h);
+              pendingBrandLogo = canvas.toDataURL('image/png');
+            } catch (err) {
+              pendingBrandLogo = ev.target.result;
+            }
+            logoPrev.innerHTML = `<img src="${pendingBrandLogo}" alt=""/>`;
           };
           img.src = ev.target.result;
         };
@@ -561,9 +577,9 @@ window.TaskModal = (function () {
       const saveAdd = () => {
         const label = (addInp.value || '').trim();
         if (!label) { addInp.focus(); return; }
-        const b = D.addBrand(label, addColor.value, pendingLogo);
+        const b = D.addBrand(label, addColor.value, pendingBrandLogo);
         if (b) state.brandKeys.push(b.key);
-        pendingLogo = null;
+        pendingBrandLogo = null;
         renderBrands();
       };
       $('#tmBrandAddSave')?.addEventListener('click', saveAdd);
@@ -572,6 +588,17 @@ window.TaskModal = (function () {
         if (e.key === 'Escape') { e.preventDefault(); $('#tmBrandAddCancel').click(); }
       });
     }
+    // Expose so the main save() can auto-commit pending brand
+    overlay._commitPendingBrand = function () {
+      const form = overlay.querySelector('#tmBrandAddForm');
+      if (!form || form.hidden) return;
+      const label = (overlay.querySelector('#tmBrandAddInput')?.value || '').trim();
+      if (!label) return;
+      const color = overlay.querySelector('#tmBrandAddColor')?.value || '#e25b62';
+      const b = D.addBrand(label, color, pendingBrandLogo);
+      if (b) state.brandKeys.push(b.key);
+      pendingBrandLogo = null;
+    };
 
     /* ---------- PRIORITY ---------- */
     function renderPrio() {
@@ -880,6 +907,8 @@ window.TaskModal = (function () {
   function save() {
     const D = window.APP_DATA;
     const overlay = document.getElementById('taskModalOverlay');
+    // Auto-commit any pending in-progress brand the user typed but didn't click ✓ on
+    if (typeof overlay._commitPendingBrand === 'function') overlay._commitPendingBrand();
     const title = (state.title || '').trim();
     if (!title) {
       const inp = overlay.querySelector('#tmTitleInput');
@@ -927,6 +956,7 @@ window.TaskModal = (function () {
     if (!window.APP_DATA) { console.warn('TaskModal needs APP_DATA'); return; }
     if (!mounted) buildShell();
     state = defaultState(window.APP_DATA);
+    pendingBrandLogo = null;
     const overlay = document.getElementById('taskModalOverlay');
     overlay._refresh();
     overlay.classList.add('open');
