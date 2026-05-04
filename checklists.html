@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>الشك ليست — Flowdesk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div class="app">
+
+  <div id="sidebarSlot"></div>
+
+  <main class="main">
+    <div id="topbarSlot"></div>
+
+    <section class="page-head">
+      <div class="page-head-text">
+        <h1 class="page-title">الشك ليست</h1>
+        <p class="page-sub">قوالب شك ليست متكررة لفِرق العمل — كل صباح تنولد للموظف نسخة فارغة.</p>
+      </div>
+      <div class="head-right">
+        <button class="cta" type="button" id="clNewBtn">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+          قالب جديد
+        </button>
+      </div>
+    </section>
+
+    <section class="kpi-row">
+      <div class="kpi-chip"><span class="kpi-num" id="clKpiTotal">0</span><span class="kpi-label">القوالب</span></div>
+      <div class="kpi-chip ok"><span class="kpi-num" id="clKpiActive">0</span><span class="kpi-label">نشطة</span></div>
+      <div class="kpi-chip alt"><span class="kpi-num" id="clKpiToday">0</span><span class="kpi-label">تعبئات اليوم</span></div>
+      <div class="kpi-chip warn"><span class="kpi-num" id="clKpiPending">0</span><span class="kpi-label">معلّقة</span></div>
+    </section>
+
+    <section class="cl-templates-grid" id="clTemplatesGrid"></section>
+
+    <section class="card-block cl-history-block" style="margin-top:18px">
+      <header class="panel-head">
+        <h3>السجل (آخر 30 يوم)</h3>
+        <span class="muted">كل التعبئات المنفّذة من الموظفين</span>
+      </header>
+      <div id="clHistoryList"></div>
+    </section>
+
+  </main>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script src="data.js"></script>
+<script src="layout.js"></script>
+<script src="task-modal.js"></script>
+<script src="checklist-template-modal.js"></script>
+<script src="checklist-instance-modal.js"></script>
+<script src="checklists.js"></script>
+</body>
+</html>

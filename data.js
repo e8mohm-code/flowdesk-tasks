@@ -18,6 +18,8 @@ window.APP_DATA = (function () {
   const EMPS_LS_KEY = 'flowdesk-employees-v1';
   const DEPTS_LS_KEY = 'flowdesk-departments-v1';
   const BRANDS_LS_KEY = 'flowdesk-brands-v1';
+  const CL_TPL_LS_KEY = 'flowdesk-cl-templates-v1';
+  const CL_INST_LS_KEY = 'flowdesk-cl-instances-v1';
   const XP_BY_PRIORITY = { high: 50, medium: 25, low: 10 };
 
   /* ============================================================
@@ -97,6 +99,208 @@ window.APP_DATA = (function () {
   function deleteBrand(key) {
     BRANDS = BRANDS.filter(b => b.key !== key);
     saveBrands();
+  }
+
+  /* ============================================================
+     CHECKLISTS — daily SOP templates + per-day filled instances
+     ============================================================ */
+  let CHECKLIST_TEMPLATES = [];
+  try {
+    const stored = localStorage.getItem(CL_TPL_LS_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed)) CHECKLIST_TEMPLATES = parsed;
+    }
+  } catch (_) {}
+
+  let CHECKLIST_INSTANCES = [];
+  try {
+    const stored = localStorage.getItem(CL_INST_LS_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed)) CHECKLIST_INSTANCES = parsed;
+    }
+  } catch (_) {}
+
+  function saveChecklistTemplates() {
+    try { localStorage.setItem(CL_TPL_LS_KEY, JSON.stringify(CHECKLIST_TEMPLATES)); } catch (_) {}
+  }
+  function saveChecklistInstances() {
+    try { localStorage.setItem(CL_INST_LS_KEY, JSON.stringify(CHECKLIST_INSTANCES)); } catch (_) {}
+  }
+
+  function todayISO() {
+    const d = new Date();
+    d.setHours(0,0,0,0);
+    return d.toISOString().slice(0, 10);
+  }
+
+  // Drop instances older than 30 days; called whenever instances are read.
+  function pruneOldChecklistInstances() {
+    const cutoff = new Date(todayISO() + 'T00:00:00');
+    cutoff.setDate(cutoff.getDate() - 30);
+    const cutoffISO = cutoff.toISOString().slice(0, 10);
+    const before = CHECKLIST_INSTANCES.length;
+    CHECKLIST_INSTANCES = CHECKLIST_INSTANCES.filter(i => (i.date || '') >= cutoffISO);
+    if (CHECKLIST_INSTANCES.length !== before) saveChecklistInstances();
+  }
+
+  function getAllChecklistTemplates() {
+    return CHECKLIST_TEMPLATES;
+  }
+  function findChecklistTemplate(id) {
+    return CHECKLIST_TEMPLATES.find(t => t.id === id) || null;
+  }
+
+  function addChecklistTemplate(payload) {
+    const u = getCurrentUser();
+    const tpl = {
+      id: 'cl-' + Date.now(),
+      title: '',
+      description: '',
+      createdBy: u ? u.id : null,
+      department: u ? u.department : '',
+      assigneeIds: [],
+      scheduleType: 'daily',
+      steps: [],
+      active: true,
+      createdAt: nowISO(),
+      ...payload,
+    };
+    CHECKLIST_TEMPLATES.push(tpl);
+    saveChecklistTemplates();
+    return tpl;
+  }
+  function updateChecklistTemplate(id, patch) {
+    const t = CHECKLIST_TEMPLATES.find(x => x.id === id);
+    if (t) { Object.assign(t, patch); saveChecklistTemplates(); }
+    return t;
+  }
+  function deleteChecklistTemplate(id) {
+    CHECKLIST_TEMPLATES = CHECKLIST_TEMPLATES.filter(t => t.id !== id);
+    saveChecklistTemplates();
+    // Also drop pending instances for this template
+    CHECKLIST_INSTANCES = CHECKLIST_INSTANCES.filter(i => i.templateId !== id);
+    saveChecklistInstances();
+  }
+
+  // Manager: all; Supervisor: same dept; Employee: only those assigned to them.
+  function getChecklistTemplatesForUser() {
+    const u = getCurrentUser();
+    if (!u) return [];
+    if (u.permRole === 'manager') return CHECKLIST_TEMPLATES.slice();
+    if (u.permRole === 'supervisor') return CHECKLIST_TEMPLATES.filter(t => t.department === u.department);
+    return CHECKLIST_TEMPLATES.filter(t => (t.assigneeIds || []).includes(u.id) && t.active !== false);
+  }
+
+  function canManageChecklists() {
+    return isManager() || isSupervisor();
+  }
+
+  function snapshotStepsFromTemplate(template) {
+    return (template.steps || []).map(s => ({
+      templateStepId: s.id,
+      text: s.text,
+      photoRequired: !!s.photoRequired,
+      done: false,
+      photoFile: null,
+      completedAt: null,
+    }));
+  }
+
+  function createOnDemandInstance(templateId, empId) {
+    const tpl = findChecklistTemplate(templateId);
+    if (!tpl) return null;
+    if (!(tpl.assigneeIds || []).includes(empId)) return null;
+    const inst = {
+      id: 'cli-' + Date.now() + '-' + Math.floor(Math.random()*9999),
+      templateId,
+      assigneeId: empId,
+      date: todayISO(),
+      triggerType: 'on-demand',
+      steps: snapshotStepsFromTemplate(tpl),
+      status: 'pending',
+      startedAt: null,
+      submittedAt: null,
+    };
+    CHECKLIST_INSTANCES.push(inst);
+    saveChecklistInstances();
+    return inst;
+  }
+
+  // For each daily template assigned to the employee, ensure an instance
+  // exists for today's date. Also prunes >30-day-old instances.
+  function ensureTodayInstancesForEmployee(empId) {
+    pruneOldChecklistInstances();
+    const today = todayISO();
+    const myDailyTemplates = CHECKLIST_TEMPLATES.filter(t =>
+      t.active !== false &&
+      t.scheduleType === 'daily' &&
+      (t.assigneeIds || []).includes(empId)
+    );
+    let added = false;
+    myDailyTemplates.forEach(tpl => {
+      const exists = CHECKLIST_INSTANCES.some(i =>
+        i.templateId === tpl.id &&
+        i.assigneeId === empId &&
+        i.date === today
+      );
+      if (!exists) {
+        CHECKLIST_INSTANCES.push({
+          id: 'cli-' + Date.now() + '-' + Math.floor(Math.random()*9999),
+          templateId: tpl.id,
+          assigneeId: empId,
+          date: today,
+          triggerType: 'daily',
+          steps: snapshotStepsFromTemplate(tpl),
+          status: 'pending',
+          startedAt: null,
+          submittedAt: null,
+        });
+        added = true;
+      }
+    });
+    if (added) saveChecklistInstances();
+  }
+
+  function getInstancesForEmployee(empId, dayCount) {
+    pruneOldChecklistInstances();
+    return CHECKLIST_INSTANCES
+      .filter(i => i.assigneeId === empId)
+      .sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  }
+  function getInstancesForTemplate(templateId) {
+    pruneOldChecklistInstances();
+    return CHECKLIST_INSTANCES
+      .filter(i => i.templateId === templateId)
+      .sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  }
+  function findChecklistInstance(id) {
+    return CHECKLIST_INSTANCES.find(i => i.id === id) || null;
+  }
+  function updateInstanceStep(instanceId, stepIdx, patch) {
+    const inst = findChecklistInstance(instanceId);
+    if (!inst || !inst.steps[stepIdx]) return;
+    Object.assign(inst.steps[stepIdx], patch);
+    if (patch.done && !inst.steps[stepIdx].completedAt) {
+      inst.steps[stepIdx].completedAt = nowISO();
+    }
+    if (inst.status === 'pending') {
+      inst.status = 'in-progress';
+      inst.startedAt = nowISO();
+    }
+    saveChecklistInstances();
+  }
+  function submitInstance(instanceId) {
+    const inst = findChecklistInstance(instanceId);
+    if (!inst) return false;
+    // All required steps must be done with photo if photoRequired
+    const blocking = inst.steps.find(s => !s.done || (s.photoRequired && !s.photoFile));
+    if (blocking) return false;
+    inst.status = 'submitted';
+    inst.submittedAt = nowISO();
+    saveChecklistInstances();
+    return true;
   }
 
   /* ============================================================
@@ -698,6 +902,20 @@ window.APP_DATA = (function () {
     approveExtension,
     denyExtension,
     clearExtensionRequest,
+    canManageChecklists,
+    getAllChecklistTemplates,
+    findChecklistTemplate,
+    addChecklistTemplate,
+    updateChecklistTemplate,
+    deleteChecklistTemplate,
+    getChecklistTemplatesForUser,
+    createOnDemandInstance,
+    ensureTodayInstancesForEmployee,
+    getInstancesForEmployee,
+    getInstancesForTemplate,
+    findChecklistInstance,
+    updateInstanceStep,
+    submitInstance,
     getVisibleEmployees,
     getVisibleTasks,
     getEmployeeXP,

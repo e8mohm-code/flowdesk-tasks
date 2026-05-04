@@ -10,6 +10,7 @@ window.LAYOUT = (function () {
     team:          { file: 'team.html',          label: 'الفِرق',      icon: 'team' },
     calendar:      { file: 'calendar.html',      label: 'التقويم',    icon: 'cal'  },
     reports:       { file: 'reports.html',       label: 'التقارير',   icon: 'reports'},
+    checklists:    { file: 'checklists.html',    label: 'الشك ليست',  icon: 'check' },
     favorites:     { file: 'favorites.html',     label: 'المفضلة',    icon: 'star' },
     notifications: { file: 'notifications.html', label: 'التنبيهات',  icon: 'bell' },
   };
@@ -40,6 +41,7 @@ window.LAYOUT = (function () {
         <nav class="tabs" role="tablist">
           ${tab('team')}
           ${tab('reports')}
+          ${D && D.canManageChecklists() ? tab('checklists') : ''}
           ${tab('tasks')}
           ${tab('calendar')}
         </nav>

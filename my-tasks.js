@@ -238,17 +238,82 @@
     `;
   }
 
+  /* ---------- TAB: الشك ليست ---------- */
+  function renderChecklistTab() {
+    // Materialize today's instances + prune >30 day old
+    D.ensureTodayInstancesForEmployee(user.id);
+    const today = D.TODAY.toISOString().slice(0, 10);
+    const all = D.getInstancesForEmployee(user.id);
+    const todays = all.filter(i => i.date === today);
+    const past = all.filter(i => i.date !== today);
+
+    const card = (i) => {
+      const tpl = D.findChecklistTemplate(i.templateId);
+      const total = (i.steps || []).length;
+      const done = (i.steps || []).filter(s => s.done).length;
+      const pct = total ? Math.round((done / total) * 100) : 0;
+      const statusClass = i.status === 'submitted' ? 'submitted' :
+                          i.status === 'in-progress' ? 'progress' : 'pending';
+      const statusLabel = i.status === 'submitted' ? '✓ مُسلَّم' :
+                          i.status === 'in-progress' ? 'قيد التنفيذ' : 'لم يبدأ';
+      return `
+        <article class="cli-card ${statusClass}" data-cli="${i.id}">
+          <div class="cli-card-row">
+            <h4 class="cli-card-title">${esc(tpl ? tpl.title : 'شك ليست')}</h4>
+            <span class="cli-card-status ${statusClass}">${statusLabel}</span>
+          </div>
+          <div class="cli-card-meta">
+            <span class="cli-card-date">📅 ${esc(i.date)}</span>
+            ${i.triggerType === 'on-demand' ? '<span class="cli-card-badge">⚡ خاصة</span>' : ''}
+          </div>
+          <div class="cli-progress-row">
+            <div class="cli-progress-bar"><span style="width:${pct}%"></span></div>
+            <small>${done}/${total}</small>
+          </div>
+        </article>
+      `;
+    };
+
+    return `
+      <div class="ph-section">
+        <h2>اليوم</h2>
+        <div class="cli-list">
+          ${todays.length ? todays.map(card).join('') : '<div class="ph-empty">لا شك ليست لليوم 🎉</div>'}
+        </div>
+      </div>
+
+      ${past.length ? `
+        <div class="ph-section">
+          <h2 class="muted-h">السجل (آخر 30 يوم)</h2>
+          <div class="cli-list">
+            ${past.slice(0, 30).map(card).join('')}
+          </div>
+        </div>
+      ` : ''}
+    `;
+  }
+
+  function bindChecklistClicks() {
+    document.querySelectorAll('[data-cli]').forEach(el => {
+      el.addEventListener('click', () => {
+        if (window.ChecklistInstanceModal) window.ChecklistInstanceModal.open(el.dataset.cli);
+      });
+    });
+  }
+
   /* ---------- RENDER MAIN ---------- */
   function render() {
     renderHead();
     let content = '';
-    if (activeTab === 'tasks')    content = renderTasksTab();
+    if (activeTab === 'tasks')         content = renderTasksTab();
     else if (activeTab === 'watching') content = renderWatchingTab();
     else if (activeTab === 'profile')  content = renderProfileTab();
+    else if (activeTab === 'checklist') content = renderChecklistTab();
     else if (activeTab === 'alerts')   content = renderAlertsTab();
     document.getElementById('phoneMain').innerHTML = content;
     document.querySelectorAll('.ph-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === activeTab));
     bindTaskClicks();
+    bindChecklistClicks();
   }
 
   function bindTaskClicks() {

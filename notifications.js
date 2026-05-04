@@ -48,6 +48,30 @@ LAYOUT.render('notifications');
       });
     });
 
+    // 3) Pending checklists for today after 5pm — manager/supervisor reminder
+    if (D.canManageChecklists && D.canManageChecklists()) {
+      const todayISO = D.TODAY.toISOString().slice(0, 10);
+      const now = new Date();
+      const after5pm = now.getHours() >= 17;
+      const tpls = D.getChecklistTemplatesForUser();
+      tpls.forEach(tpl => {
+        const insts = D.getInstancesForTemplate(tpl.id).filter(i => i.date === todayISO);
+        insts.forEach(i => {
+          if (i.status !== 'submitted' && after5pm) {
+            const e = findEmployee(i.assigneeId);
+            items.push({
+              id: 'cli-' + i.id,
+              type: 'overdue',
+              empId: i.assigneeId,
+              text: `<b>${escapeHtml(e ? e.name : 'موظف')}</b> لم يسلّم شك ليست <b>«${escapeHtml(tpl.title)}»</b> اليوم`,
+              when: todayISO + ' 17:00',
+              unread: true,
+            });
+          }
+        });
+      });
+    }
+
     return items.sort((a, b) => (b.when || '').localeCompare(a.when || ''));
   }
 
