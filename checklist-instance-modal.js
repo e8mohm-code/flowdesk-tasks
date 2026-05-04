@@ -40,10 +40,10 @@ window.ChecklistInstanceModal = (function () {
     const editable = !readOnly && isOwner && inst.status !== 'submitted';
 
     const stepsTotal = (inst.steps || []).length;
-    const stepsDone = (inst.steps || []).filter(s => s.done).length;
-    const pct = stepsTotal ? Math.round((stepsDone / stepsTotal) * 100) : 0;
+    const stepsAnswered = (inst.steps || []).filter(s => s.answer != null).length;
+    const pct = stepsTotal ? Math.round((stepsAnswered / stepsTotal) * 100) : 0;
 
-    const blocking = (inst.steps || []).find(s => !s.done || (s.photoRequired && !s.photoFile));
+    const blocking = (inst.steps || []).find(s => (s.answer == null) || (s.photoRequired && !s.photoFile));
     const canSubmit = editable && !blocking;
 
     const statusLabel = inst.status === 'submitted' ? 'مُسلَّم ✓' :
@@ -69,34 +69,42 @@ window.ChecklistInstanceModal = (function () {
 
         <div class="cli-progress-row">
           <div class="cli-progress-bar"><span style="width:${pct}%"></span></div>
-          <b>${stepsDone}/${stepsTotal}</b>
+          <b>${stepsAnswered}/${stepsTotal}</b>
         </div>
 
         <ul class="cli-step-list">
           ${(inst.steps || []).map((s, i) => {
             const att = s.photoFile;
-            const blocked = s.photoRequired && !att && !s.done;
+            const answers = (Array.isArray(s.answers) && s.answers.length) ? s.answers : ['نعم', 'لا', 'غير متوفر'];
+            const answered = s.answer != null;
             return `
-              <li class="cli-step ${s.done ? 'done' : ''} ${s.photoRequired ? 'req-photo' : ''}">
-                <button type="button" class="cli-step-toggle" data-step-toggle="${i}" ${editable ? '' : 'disabled'} title="${blocked ? 'صورة إجبارية قبل الإكمال' : ''}">
-                  <span class="cli-step-check">${s.done ? '✓' : ''}</span>
-                </button>
-                <div class="cli-step-text">
-                  <span>${esc(s.text)}</span>
-                  ${s.photoRequired
-                    ? `<small class="cli-req-pill ${att ? 'ok' : ''}">${att ? '📷 مرفوعة' : '📷 إجبارية'}</small>`
-                    : (s.photoFile ? '<small class="cli-req-pill ok">📷 مرفوعة</small>' : '')}
+              <li class="cli-step ${answered ? 'done' : ''} ${s.photoRequired ? 'req-photo' : ''}">
+                <div class="cli-step-head">
+                  <span class="cli-step-num">${i + 1}</span>
+                  <div class="cli-step-text">
+                    <span>${esc(s.text)}</span>
+                    ${s.photoRequired
+                      ? `<small class="cli-req-pill ${att ? 'ok' : ''}">${att ? '📷 مرفوعة' : '📷 إجبارية'}</small>`
+                      : (s.photoFile ? '<small class="cli-req-pill ok">📷 مرفوعة</small>' : '')}
+                  </div>
+                  ${att ? `
+                    <a class="cli-photo-thumb" href="${att}" target="_blank" rel="noopener">
+                      <img src="${att}" alt=""/>
+                    </a>
+                  ` : ''}
+                  ${editable ? `
+                    <button type="button" class="cli-photo-btn" data-step-photo="${i}" title="${att ? 'استبدال الصورة' : 'إرفاق صورة'}">
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                    </button>
+                  ` : ''}
                 </div>
-                ${att ? `
-                  <a class="cli-photo-thumb" href="${att}" target="_blank" rel="noopener">
-                    <img src="${att}" alt=""/>
-                  </a>
-                ` : ''}
-                ${editable ? `
-                  <button type="button" class="cli-photo-btn" data-step-photo="${i}" title="${att ? 'استبدال الصورة' : 'إرفاق صورة'}">
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                  </button>
-                ` : ''}
+                <div class="cli-answer-row">
+                  ${answers.map((label, ai) => `
+                    <button type="button" class="cli-ans-btn ${s.answer === ai ? 'selected ans-' + ai : ''}" data-step-answer="${i}" data-ans-idx="${ai}" ${editable ? '' : 'disabled'}>
+                      ${esc(label)}
+                    </button>
+                  `).join('')}
+                </div>
               </li>
             `;
           }).join('')}
@@ -106,7 +114,7 @@ window.ChecklistInstanceModal = (function () {
 
       <footer class="td-foot">
         ${editable ? `
-          <span class="muted" style="margin-inline-end:auto;font-size:11.5px">${blocking ? `متبقي ${(inst.steps || []).filter(s => !s.done || (s.photoRequired && !s.photoFile)).length} خطوة` : 'جميع الخطوات جاهزة ✓'}</span>
+          <span class="muted" style="margin-inline-end:auto;font-size:11.5px">${blocking ? `متبقي ${(inst.steps || []).filter(s => (s.answer == null) || (s.photoRequired && !s.photoFile)).length} خطوة` : 'جميع الخطوات جاهزة ✓'}</span>
           <button type="button" class="td-btn primary" id="cliSubmitBtn" ${canSubmit ? '' : 'disabled'}>
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l5 5 13-13"/></svg>
             إرسال نهائي
@@ -120,16 +128,19 @@ window.ChecklistInstanceModal = (function () {
     /* Wire up */
     modal.querySelector('.td-close-btn').addEventListener('click', close);
 
-    modal.querySelectorAll('[data-step-toggle]').forEach(btn => {
+    modal.querySelectorAll('[data-step-answer]').forEach(btn => {
       btn.addEventListener('click', () => {
         if (!editable) return;
-        const i = +btn.dataset.stepToggle;
+        const i = +btn.dataset.stepAnswer;
+        const ai = +btn.dataset.ansIdx;
         const step = inst.steps[i];
-        if (step.photoRequired && !step.photoFile && !step.done) {
-          alert('هذي الخطوة تحتاج صورة قبل الإكمال');
+        if (step.photoRequired && !step.photoFile) {
+          alert('هذي الخطوة تحتاج صورة قبل اختيار الإجابة');
           return;
         }
-        D.updateInstanceStep(currentInstanceId, i, { done: !step.done });
+        // toggle: if same answer clicked, clear it
+        const newAnswer = step.answer === ai ? null : ai;
+        D.updateInstanceStep(currentInstanceId, i, { answer: newAnswer, done: newAnswer != null });
         render();
         refresh();
       });

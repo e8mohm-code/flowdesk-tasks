@@ -197,11 +197,15 @@ window.APP_DATA = (function () {
     return isManager() || isSupervisor();
   }
 
+  const DEFAULT_STEP_ANSWERS = ['نعم', 'لا', 'غير متوفر'];
+
   function snapshotStepsFromTemplate(template) {
     return (template.steps || []).map(s => ({
       templateStepId: s.id,
       text: s.text,
       photoRequired: !!s.photoRequired,
+      answers: Array.isArray(s.answers) && s.answers.length ? s.answers.slice() : DEFAULT_STEP_ANSWERS.slice(),
+      answer: null,           // index of chosen answer, or null
       done: false,
       photoFile: null,
       completedAt: null,
@@ -294,8 +298,8 @@ window.APP_DATA = (function () {
   function submitInstance(instanceId) {
     const inst = findChecklistInstance(instanceId);
     if (!inst) return false;
-    // All required steps must be done with photo if photoRequired
-    const blocking = inst.steps.find(s => !s.done || (s.photoRequired && !s.photoFile));
+    // Each step must have an answer selected, plus a photo if required
+    const blocking = inst.steps.find(s => (s.answer == null) || (s.photoRequired && !s.photoFile));
     if (blocking) return false;
     inst.status = 'submitted';
     inst.submittedAt = nowISO();
@@ -903,6 +907,7 @@ window.APP_DATA = (function () {
     denyExtension,
     clearExtensionRequest,
     canManageChecklists,
+    DEFAULT_STEP_ANSWERS,
     getAllChecklistTemplates,
     findChecklistTemplate,
     addChecklistTemplate,

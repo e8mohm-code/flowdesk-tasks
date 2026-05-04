@@ -139,16 +139,27 @@ window.ChecklistTemplateModal = (function () {
       list.innerHTML = '<li class="muted cl-step-empty">لا خطوات بعد — أضف خطوة من المربع تحت</li>';
       return;
     }
-    list.innerHTML = state.steps.map((s, i) => `
-      <li class="cl-step-row">
-        <span class="cl-step-num">${i + 1}</span>
-        <span class="cl-step-text">${esc(s.text)}</span>
-        ${s.photoRequired ? '<span class="cl-step-photo-pill" title="صورة إجبارية">📷 إجبارية</span>' : '<span class="cl-step-photo-pill optional">📷 اختيارية</span>'}
-        <button type="button" class="cl-step-up" data-up="${i}" aria-label="أعلى" ${i === 0 ? 'disabled' : ''}>↑</button>
-        <button type="button" class="cl-step-down" data-down="${i}" aria-label="أسفل" ${i === state.steps.length - 1 ? 'disabled' : ''}>↓</button>
-        <button type="button" class="cl-step-del" data-del="${i}" aria-label="حذف">×</button>
-      </li>
-    `).join('');
+    list.innerHTML = state.steps.map((s, i) => {
+      const answers = (Array.isArray(s.answers) && s.answers.length === 3) ? s.answers : ['نعم', 'لا', 'غير متوفر'];
+      return `
+        <li class="cl-step-row">
+          <div class="cl-step-main">
+            <span class="cl-step-num">${i + 1}</span>
+            <span class="cl-step-text">${esc(s.text)}</span>
+            ${s.photoRequired ? '<span class="cl-step-photo-pill" title="صورة إجبارية">📷 إجبارية</span>' : '<span class="cl-step-photo-pill optional">📷 اختيارية</span>'}
+            <button type="button" class="cl-step-up" data-up="${i}" aria-label="أعلى" ${i === 0 ? 'disabled' : ''}>↑</button>
+            <button type="button" class="cl-step-down" data-down="${i}" aria-label="أسفل" ${i === state.steps.length - 1 ? 'disabled' : ''}>↓</button>
+            <button type="button" class="cl-step-del" data-del="${i}" aria-label="حذف">×</button>
+          </div>
+          <div class="cl-step-answers">
+            <span class="cl-step-answers-label">الإجابات المتاحة:</span>
+            ${answers.map((ans, ai) => `
+              <input type="text" class="cl-step-answer-input" data-ans-step="${i}" data-ans-idx="${ai}" value="${esc(ans)}" maxlength="20" placeholder="إجابة ${ai + 1}"/>
+            `).join('')}
+          </div>
+        </li>
+      `;
+    }).join('');
 
     list.querySelectorAll('[data-up]').forEach(b => b.addEventListener('click', () => {
       const i = +b.dataset.up; if (i <= 0) return;
@@ -165,6 +176,14 @@ window.ChecklistTemplateModal = (function () {
       state.steps.splice(i, 1);
       renderSteps();
     }));
+    list.querySelectorAll('.cl-step-answer-input').forEach(inp => {
+      inp.addEventListener('input', e => {
+        const si = +e.target.dataset.ansStep;
+        const ai = +e.target.dataset.ansIdx;
+        if (!state.steps[si].answers) state.steps[si].answers = ['نعم', 'لا', 'غير متوفر'];
+        state.steps[si].answers[ai] = e.target.value;
+      });
+    });
   }
 
   function wire() {
@@ -205,10 +224,12 @@ window.ChecklistTemplateModal = (function () {
       const text = (inp.value || '').trim();
       if (!text) { inp.focus(); return; }
       const photoRequired = $('#clStepPhotoReq').checked;
+      const defaults = (D.DEFAULT_STEP_ANSWERS || ['نعم', 'لا', 'غير متوفر']).slice();
       state.steps.push({
         id: 's-' + Date.now() + '-' + Math.floor(Math.random()*9999),
         text,
         photoRequired,
+        answers: defaults,
       });
       inp.value = '';
       $('#clStepPhotoReq').checked = false;
@@ -253,7 +274,14 @@ window.ChecklistTemplateModal = (function () {
       description: (state.description || '').trim(),
       assigneeIds: state.assigneeIds.slice(),
       scheduleType: state.scheduleType,
-      steps: state.steps.map(s => ({ id: s.id, text: s.text, photoRequired: !!s.photoRequired })),
+      steps: state.steps.map(s => ({
+        id: s.id,
+        text: s.text,
+        photoRequired: !!s.photoRequired,
+        answers: (Array.isArray(s.answers) && s.answers.length === 3)
+          ? s.answers.map(a => (a || '').trim() || 'إجابة')
+          : ['نعم', 'لا', 'غير متوفر'],
+      })),
       active: state.active !== false,
     };
 
